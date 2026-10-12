@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Market Brief</title>
+<meta name="theme-color" content="#0f1720" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Market Brief">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{
+  --bg:#f6f4ef; --card:#ffffff; --ink:#1b2128; --muted:#6b7480; --line:#e4e0d8;
+  --up:#137a48; --down:#b4232c; --accent:#1f4e79; --chip:#ece8df;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --num: ui-monospace, "SF Mono", "Roboto Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0f1720; --card:#17212c; --ink:#e8edf2; --muted:#8d99a6; --line:#243140;
+         --up:#3fbf7f; --down:#f0646c; --accent:#8cb8e6; --chip:#1f2b38; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-text-size-adjust:100%}
+body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 16px 8px;border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:20px;margin:0;letter-spacing:-.01em}
+.stamp{font-size:12px;color:var(--muted);margin-top:2px}
+.stamp.stale{color:var(--down)}
+button{font:inherit;color:inherit}
+.refresh{border:1px solid var(--line);background:var(--card);border-radius:999px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer}
+.refresh svg{width:18px;height:18px}
+.refresh.spin svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+main{max-width:640px;margin:0 auto;padding:12px 16px}
+section[hidden]{display:none}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 2px 8px;font-weight:600}
+h2:first-child{margin-top:4px}
+.list{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.q{display:grid;grid-template-columns:1fr 72px auto;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line)}
+.q:first-child{border-top:0}
+.q .nm{font-weight:600;font-size:15px}
+.q .sym{font-size:11px;color:var(--muted);margin-top:2px}
+.q .px{text-align:right;font-family:var(--num);font-size:15px;font-variant-numeric:tabular-nums}
+.q .ch{text-align:right;font-family:var(--num);font-size:12px;margin-top:3px;font-variant-numeric:tabular-nums}
+.up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--muted)}
+.pill{display:inline-block;padding:1px 6px;border-radius:6px;font-weight:600}
+.up .pill{background:color-mix(in srgb,var(--up) 14%,transparent)}
+.down .pill{background:color-mix(in srgb,var(--down) 14%,transparent)}
+.spark{width:72px;height:28px;display:block}
+.na{color:var(--muted);font-size:13px;text-align:right}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:0;background:var(--chip);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+.n{display:block;text-decoration:none;color:inherit;padding:12px 14px;border-top:1px solid var(--line)}
+.n:first-child{border-top:0}
+.n:active{background:var(--chip)}
+.n .meta{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.n .meta b{color:var(--accent);font-weight:600}
+.n .t{font-size:15px;font-weight:600;line-height:1.3;margin:3px 0}
+.n .s{font-size:13px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.note{font-size:12px;color:var(--muted);padding:12px 2px;line-height:1.5}
+.empty{padding:24px 14px;text-align:center;color:var(--muted);font-size:14px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;border:0;background:none;padding:10px 0 12px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+nav button svg{width:22px;height:22px}
+nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div>
+      <h1 id="title">Market Brief</h1>
+      <div class="stamp" id="stamp">Loading…</div>
+    </div>
+    <button class="refresh" id="refresh" aria-label="Refresh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section id="markets" role="tabpanel"></section>
+  <section id="news" role="tabpanel" hidden>
+    <div class="chips" id="chips"></div>
+    <div class="list" id="newsList"></div>
+  </section>
+</main>
+
+<nav role="tablist">
+  <button role="tab" aria-selected="true" data-tab="markets">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg>Markets
+  </button>
+  <button role="tab" aria-selected="false" data-tab="news">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>News
+  </button>
+</nav>
+
+<script>
+const $ = s => document.querySelector(s);
+const tz = "Africa/Johannesburg";
+let data = null, source = "All";
+
+function store(k, v){ try{ v===undefined ? v = localStorage.getItem(k) : localStorage.setItem(k, v); }catch(e){ v = null; } return v; }
+
+function fmt(n, d=2){ return n==null ? "–" : n.toLocaleString("en-ZA",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+
+function ago(iso){
+  if(!iso) return "";
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  if(m < 1) return "just now";
+  if(m < 60) return m + " min ago";
+  const h = Math.round(m/60);
+  if(h < 24) return h + " h ago";
+  return new Date(iso).toLocaleDateString("en-ZA",{day:"numeric",month:"short",timeZone:tz});
+}
+
+function spark(vals, cls){
+  const v = (vals||[]).filter(x => x!=null);
+  if(v.length < 2) return "";
+  const lo = Math.min(...v), hi = Math.max(...v), r = (hi-lo) || 1, w = 72, h = 28, p = 2;
+  const pts = v.map((y,i) => `${(i/(v.length-1)*(w-2*p)+p).toFixed(1)},${(h-p-(y-lo)/r*(h-2*p)).toFixed(1)}`).join(" ");
+  return `<svg class="spark ${cls}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+
+function esc(s){ const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; }
+
+function renderMarkets(){
+  const el = $("#markets");
+  el.innerHTML = data.markets.map(g => `
+    <h2>${esc(g.group)}</h2>
+    <div class="list">${g.items.map(q => {
+      if(!q.ok) return `<div class="q"><div><div class="nm">${esc(q.name)}</div><div class="sym">${esc(q.symbol)}</div></div><div></div><div class="na">unavailable</div></div>`;
+      const pct = Math.abs(q.change_pct ?? 0) < 0.005 ? 0 : q.change_pct;
+      const cls = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
+      const sign = pct > 0 ? "+" : pct < 0 ? "−" : "";
+      return `<div class="q">
+        <div><div class="nm">${esc(q.name)}</div><div class="sym">${esc(q.symbol)} · ${esc(q.as_of)}</div></div>
+        <div>${spark(q.spark, cls)}</div>
+        <div><div class="px">${fmt(q.price, q.decimals)}</div>
+          <div class="ch ${cls}"><span class="pill">${sign}${fmt(Math.abs(pct))}%</span></div></div>
+      </div>`;
+    }).join("")}</div>`).join("") +
+    `<p class="note">Prices are delayed (typically 15–20 min) and show the change from the previous close. Sparklines cover about one month. Source: Yahoo Finance.</p>`;
+}
+
+function renderNews(){
+  const sources = ["All", ...new Set(data.news.map(n => n.source))];
+  if(!sources.includes(source)) source = "All";
+  $("#chips").innerHTML = sources.map(s => `<button class="chip" aria-pressed="${s===source}" data-src="${esc(s)}">${esc(s)}</button>`).join("");
+  const items = data.news.filter(n => source==="All" || n.source===source);
+  $("#newsList").innerHTML = items.length ? items.map(n => `
+    <a class="n" href="${esc(n.link)}" target="_blank" rel="noopener">
+      <div class="meta"><b>${esc(n.source)}</b> · ${ago(n.published)}</div>
+      <div class="t">${esc(n.title)}</div>
+      ${n.summary ? `<div class="s">${esc(n.summary)}</div>` : ""}
+    </a>`).join("") : `<div class="empty">No headlines right now.</div>`;
+}
+
+function renderStamp(){
+  const t = new Date(data.generated_at);
+  const mins = (Date.now() - t) / 60000;
+  const st = $("#stamp");
+  st.textContent = "Updated " + t.toLocaleTimeString("en-ZA",{hour:"2-digit",minute:"2-digit",timeZone:tz}) + " · " + ago(data.generated_at);
+  st.classList.toggle("stale", mins > 60);
+}
+
+async function load(){
+  const btn = $("#refresh"); btn.classList.add("spin");
+  try{
+    const r = await fetch("data.json?t=" + Date.now(), {cache:"no-store"});
+    if(!r.ok) throw new Error(r.status);
+    data = await r.json();
+    $("#title").textContent = data.title || "Market Brief";
+    renderMarkets(); renderNews(); renderStamp();
+  }catch(e){
+    if(!data) $("#markets").innerHTML = `<div class="empty">Couldn't load data. Pull again in a moment.</div>`;
+    $("#stamp").textContent = data ? $("#stamp").textContent + " · offline" : "Couldn't load data";
+  }finally{ btn.classList.remove("spin"); }
+}
+
+function setTab(tab){
+  document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab===tab));
+  $("#markets").hidden = tab !== "markets";
+  $("#news").hidden = tab !== "news";
+  store("tab", tab); window.scrollTo(0,0);
+}
+
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+$("#chips").onclick = e => { const b = e.target.closest(".chip"); if(b){ source = b.dataset.src; renderNews(); } };
+$("#refresh").onclick = load;
+document.addEventListener("visibilitychange", () => { if(!document.hidden) load(); });
+setInterval(() => { if(data) renderStamp(); }, 60000);
+setInterval(load, 5*60000);
+
+setTab(store("tab") || "markets");
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "title": "Market Brief",
+  "markets": [
+    {
+      "group": "South Africa",
+      "items": [
+        { "symbol": "^J203.JO", "name": "JSE All Share" },
+        { "symbol": "^J200.JO", "name": "JSE Top 40" }
+      ]
+    },
+    {
+      "group": "International",
+      "items": [
+        { "symbol": "^GSPC", "name": "S&P 500" },
+        { "symbol": "^IXIC", "name": "Nasdaq" },
+        { "symbol": "^DJI", "name": "Dow Jones" },
+        { "symbol": "^FTSE", "name": "FTSE 100" },
+        { "symbol": "^GDAXI", "name": "DAX" },
+        { "symbol": "^STOXX50E", "name": "Euro Stoxx 50" },
+        { "symbol": "^N225", "name": "Nikkei 225" },
+        { "symbol": "^HSI", "name": "Hang Seng" }
+      ]
+    },
+    {
+      "group": "Rand",
+      "items": [
+        { "symbol": "ZAR=X", "name": "USD/ZAR", "decimals": 4 },
+        { "symbol": "EURZAR=X", "name": "EUR/ZAR", "decimals": 4 },
+        { "symbol": "GBPZAR=X", "name": "GBP/ZAR", "decimals": 4 }
+      ]
+    },
+    {
+      "group": "Commodities & Crypto",
+      "items": [
+        { "symbol": "GC=F", "name": "Gold ($/oz)" },
+        { "symbol": "BZ=F", "name": "Brent crude ($/bbl)" },
+        { "symbol": "BTC-USD", "name": "Bitcoin ($)", "decimals": 0 }
+      ]
+    }
+  ],
+  "news": {
+    "max_items": 60,
+    "feeds": [
+      { "name": "Moneyweb", "url": "https://www.moneyweb.co.za/feed/" },
+      { "name": "News24", "url": "https://feeds.news24.com/articles/news24/TopStories/rss" },
+      { "name": "BusinessTech", "url": "https://businesstech.co.za/news/feed/" },
+      { "name": "Daily Maverick", "url": "https://www.dailymaverick.co.za/dmrss/" }
+    ]
+  }
+}
