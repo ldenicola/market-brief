@@ -39,12 +39,24 @@
     }
   ],
   "news": {
-    "max_items": 60,
+    "max_items": 90,
     "feeds": [
       { "name": "Moneyweb", "url": "https://www.moneyweb.co.za/feed/" },
       { "name": "News24", "url": "https://feeds.news24.com/articles/news24/TopStories/rss" },
       { "name": "BusinessTech", "url": "https://businesstech.co.za/news/feed/" },
-      { "name": "Daily Maverick", "url": "https://www.dailymaverick.co.za/dmrss/" }
+      { "name": "Daily Maverick", "url": "https://www.dailymaverick.co.za/dmrss/" },
+      { "name": "SABC", "url": "https://www.sabcnews.com/sabcnews/feed/" },
+      { "name": "EWN", "url": "https://ewn.co.za/RSS%20Feeds/Latest%20News" },
+      { "name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml" }
+    ]
+  },
+  "sport": {
+    "max_items": 80,
+    "feeds": [
+      { "name": "Rugby", "url": "https://feeds.bbci.co.uk/sport/rugby-union/rss.xml" },
+      { "name": "Cricket", "url": "https://feeds.bbci.co.uk/sport/cricket/rss.xml" },
+      { "name": "Football", "url": "https://feeds.bbci.co.uk/sport/football/rss.xml" },
+      { "name": "More sport", "url": "https://feeds.bbci.co.uk/sport/rss.xml" }
     ]
   }
 }

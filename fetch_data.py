@@ -144,6 +144,7 @@ def main() -> int:
     cfg = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
     markets = fetch_markets(cfg["markets"])
     news, failed = fetch_news(cfg["news"])
+    sport, sport_failed = fetch_news(cfg["sport"]) if "sport" in cfg else ([], [])
 
     payload = {
         "title": cfg.get("title", "Market Brief"),
@@ -151,13 +152,15 @@ def main() -> int:
         "markets": markets,
         "news": news,
         "failed_feeds": failed,
+        "sport": sport,
+        "failed_sport_feeds": sport_failed,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
     ok = sum(r["ok"] for g in markets for r in g["items"])
     total = sum(len(g["items"]) for g in markets)
-    print(f"Wrote {OUT.relative_to(ROOT)}: {ok}/{total} quotes, {len(news)} headlines")
+    print(f"Wrote {OUT.relative_to(ROOT)}: {ok}/{total} quotes, {len(news)} headlines, {len(sport)} sport")
     # Fail the run only if everything is empty, so a single outage doesn't blank the page.
     return 0 if (ok or news) else 1
 
