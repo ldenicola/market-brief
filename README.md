@@ -21,6 +21,15 @@ Edit `config.json`. You can do this directly on GitHub with the pencil icon, and
 - **Markets:** each entry is a Yahoo Finance symbol plus a display name. To add something, find it on finance.yahoo.com and copy the symbol, for example `GC=F` for gold, `BZ=F` for Brent crude, or `^J580.JO` for an index.
 - **News:** add or remove RSS feeds. Most WordPress-based sites have one at `/feed/`.
 
+## The Ask tab (search and AI analysis)
+
+- **Search:** type any word or name, or tap a topic chip, to see every headline from the last 7 days that mentions it, across all News and Sport sources. Separate several terms with commas, for example `Capitec, TymeBank`.
+- **Summarise & analyse:** sends the matching headlines and the market snapshot to Claude. You get back a summary, key developments, analysis and what to watch, with numbered links to the source articles.
+- **API key:** the first time, open **AI settings** at the bottom of the Ask tab and paste an Anthropic API key from console.anthropic.com. The key is stored only in your phone's browser. It isn't in the repository and isn't on the public site. Set a monthly spending limit in the Anthropic Console. A typical analysis costs well under R1.
+- **Topics:** edit the `ask → topics` list in `config.json`. Each topic has a label (what the chip shows) and the keywords it searches for.
+- **History:** the 7-day history (`archive.json`) builds up automatically from the day you install this version. Searches cover a little less than a week until then.
+- **Limits:** the analysis works from headlines and teasers, not full articles. Treat it as a well-informed briefing, and tap through to the sources for detail.
+
 ## Good to know
 
 - **Delays.** Yahoo's index data is typically 15–20 minutes delayed. GitHub sometimes starts scheduled runs a few minutes late at busy times.

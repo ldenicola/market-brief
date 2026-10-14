@@ -5,7 +5,12 @@ exchanges). Headlines come from the publishers' public RSS feeds; only
 title, link, date and a short teaser are kept, and the page links back
 to the original article.
 
-Run locally:  python fetch_data.py   ->  writes site/data.json
+It also keeps site/archive.json: a rolling 7-day collection of every
+headline seen, used by the Ask tab. Each run downloads the previous
+archive from the live site, adds the new headlines and drops old ones,
+so no history needs to be committed to the repository.
+
+Run locally:  python fetch_data.py   ->  writes site/data.json + archive.json
 """
 
 from __future__ import annotations
@@ -13,15 +18,20 @@ from __future__ import annotations
 import html
 import json
 import math
+import os
 import re
 import sys
-from datetime import datetime, timezone
+import urllib.request
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "site" / "data.json"
+ARCHIVE_OUT = ROOT / "site" / "archive.json"
 SPARK_POINTS = 22  # roughly one month of trading days
+ARCHIVE_DAYS = 7
+ARCHIVE_MAX = 2500
 
 
 def _clean(v):
@@ -140,6 +150,62 @@ def fetch_news(cfg: dict) -> tuple[list[dict], list[str]]:
     return items[: cfg.get("max_items", 60)], failed
 
 
+def _site_url() -> str | None:
+    """Public address of this site, e.g. https://name.github.io/market-brief/."""
+    if os.environ.get("SITE_URL"):
+        return os.environ["SITE_URL"].rstrip("/") + "/"
+    repo = os.environ.get("GITHUB_REPOSITORY")  # set automatically in GitHub Actions
+    if not repo or "/" not in repo:
+        return None
+    owner, name = repo.split("/", 1)
+    if name.lower() == f"{owner.lower()}.github.io":
+        return f"https://{owner.lower()}.github.io/"
+    return f"https://{owner.lower()}.github.io/{name}/"
+
+
+def load_previous_archive() -> list[dict]:
+    base = _site_url()
+    if not base:
+        return []
+    try:
+        req = urllib.request.Request(
+            base + "archive.json", headers={"User-Agent": "market-brief-updater", "Cache-Control": "no-cache"}
+        )
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        return data.get("items", []) if isinstance(data, dict) else []
+    except Exception as e:  # first run, or the site is briefly unavailable
+        print(f"[archive] starting fresh ({e})", file=sys.stderr)
+        return []
+
+
+def update_archive(previous: list[dict], news: list[dict], sport: list[dict]) -> list[dict]:
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=ARCHIVE_DAYS)
+    by_link: dict[str, dict] = {}
+    for it in previous:
+        if it.get("link"):
+            by_link[it["link"]] = it
+    for kind, items in (("news", news), ("sport", sport)):
+        for it in items:
+            old = by_link.get(it["link"], {})
+            by_link[it["link"]] = {
+                **it,
+                "kind": kind,
+                "first_seen": old.get("first_seen") or now.isoformat(),
+            }
+
+    def when(it):
+        try:
+            return datetime.fromisoformat(it.get("published") or it.get("first_seen"))
+        except (TypeError, ValueError):
+            return now
+
+    kept = [it for it in by_link.values() if when(it) >= cutoff]
+    kept.sort(key=when, reverse=True)
+    return kept[:ARCHIVE_MAX]
+
+
 def main() -> int:
     cfg = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
     markets = fetch_markets(cfg["markets"])
@@ -154,9 +220,18 @@ def main() -> int:
         "failed_feeds": failed,
         "sport": sport,
         "failed_sport_feeds": sport_failed,
+        "ask": cfg.get("ask", {}),
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+    archive = update_archive(load_previous_archive(), news, sport)
+    ARCHIVE_OUT.write_text(
+        json.dumps({"generated_at": payload["generated_at"], "days": ARCHIVE_DAYS, "items": archive},
+                   ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    print(f"Archive: {len(archive)} headlines over the last {ARCHIVE_DAYS} days")
 
     ok = sum(r["ok"] for g in markets for r in g["items"])
     total = sum(len(g["items"]) for g in markets)
