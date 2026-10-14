@@ -50,6 +50,12 @@
       { "name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml" }
     ]
   },
+  "briefing": {
+    "enabled": true,
+    "time": "06:30",
+    "weekdays_only": false,
+    "model": "claude-sonnet-5-5"
+  },
   "ask": {
     "model": "claude-sonnet-5-5",
     "topics": [

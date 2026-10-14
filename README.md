@@ -21,6 +21,20 @@ Edit `config.json`. You can do this directly on GitHub with the pencil icon, and
 - **Markets:** each entry is a Yahoo Finance symbol plus a display name. To add something, find it on finance.yahoo.com and copy the symbol, for example `GC=F` for gold, `BZ=F` for Brent crude, or `^J580.JO` for an index.
 - **News:** add or remove RSS feeds. Most WordPress-based sites have one at `/feed/`.
 
+## Market detail
+
+Tap any row on the Markets tab for a chart covering 1 month, 3 months, 6 months or 1 year. It shows the change over the period, the week's change, highs and lows, and the 52-week range. Drag a finger across the chart to read any day's closing value. The data comes from `history.json`, which each update rebuilds with about a year of daily closes.
+
+## Daily briefing
+
+Each morning, at the time set in `config.json` under `briefing` (06:30 by default, South African time), the update job asks Claude for a briefing. Claude works from the last day's headlines and the market moves. The briefing appears at the top of the Markets tab and stays there until the next morning.
+
+- **Setup:** in the repository, go to **Settings → Secrets and variables → Actions → New repository secret**. Name it `ANTHROPIC_API_KEY` and paste an Anthropic API key. GitHub encrypts secrets, never shows them on the public site, and hides them in run logs.
+- **Generate one now:** go to **Actions → Update Market Brief → Run workflow**, tick **Generate a fresh daily briefing now**, and run it.
+- **Options:** under `briefing` in `config.json`, `time` sets the hour, `weekdays_only: true` skips weekends, `enabled: false` turns it off, and `model` chooses the Claude model.
+- **Cost:** one call a day, typically a few cents.
+- **Timing:** GitHub sometimes starts scheduled runs late, so the briefing can appear 15–30 minutes after the set time.
+
 ## The Ask tab (search and AI analysis)
 
 - **Search:** type any word or name, or tap a topic chip, to see every headline from the last 7 days that mentions it, across all News and Sport sources. Separate several terms with commas, for example `Capitec, TymeBank`.
