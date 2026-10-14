@@ -66,6 +66,34 @@ h2:first-child{margin-top:4px}
 .n .s{font-size:13px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .note{font-size:12px;color:var(--muted);padding:12px 2px;line-height:1.5}
 .empty{padding:24px 14px;text-align:center;color:var(--muted);font-size:14px}
+.askbar{display:flex;gap:8px;margin:4px 0 10px}
+.askbar input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 14px;-webkit-appearance:none;appearance:none}
+.askbar input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.primary{border:0;border-radius:12px;background:var(--accent);color:var(--bg);font-weight:600;font-size:15px;padding:11px 16px;cursor:pointer;white-space:nowrap}
+.primary:disabled{opacity:.5;cursor:default}
+.secondary{border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:14px;padding:8px 12px;cursor:pointer}
+.askrow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 12px}
+.askrow .matchinfo{font-size:13px;color:var(--muted)}
+.answer{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:6px;font-size:15px;line-height:1.55}
+.answer h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin:16px 0 6px}
+.answer h3:first-child{margin-top:0}
+.answer p{margin:0 0 10px}
+.answer ul{margin:0 0 10px;padding-left:20px}
+.answer li{margin:0 0 6px}
+.answer a.ref{font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;vertical-align:super;padding:0 1px}
+.answer .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.answer.err{color:var(--down)}
+.thinking{color:var(--muted);font-size:14px}
+.thinking::after{content:"";display:inline-block;width:1.2em;text-align:left;animation:dots 1.2s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+.n .num{display:inline-block;min-width:22px;color:var(--accent);font-weight:600}
+details.settings{margin-top:22px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px}
+details.settings summary{cursor:pointer;font-weight:600}
+details.settings p{color:var(--muted);font-size:13px;line-height:1.5;margin:10px 0}
+details.settings .row{display:flex;gap:8px;margin-top:8px}
+details.settings input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.keystate{font-size:13px;margin-top:8px}
+.keystate.ok{color:var(--up)}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
 nav button{flex:1;border:0;background:none;padding:10px 0 12px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
 nav button svg{width:22px;height:22px}
@@ -97,6 +125,29 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
     <div class="list" id="sportList"></div>
     <p class="note" id="sportNote"></p>
   </section>
+  <section id="ask" role="tabpanel" hidden>
+    <form class="askbar" id="askForm" autocomplete="off">
+      <input id="q" type="search" enterkeyhint="search" placeholder="Search a topic, e.g. Capitec, rand, SARB">
+    </form>
+    <div class="chips" id="topicChips"></div>
+    <div class="askrow" id="askRow" hidden>
+      <span class="matchinfo" id="matchInfo"></span>
+      <button class="primary" id="analyse" type="button">Summarise &amp; analyse</button>
+    </div>
+    <div class="answer" id="answer" hidden></div>
+    <h2 id="matchHead" hidden>Matching headlines</h2>
+    <div class="list" id="matchList" hidden></div>
+    <p class="note" id="askNote">Searches every headline from the last 7 days across all News and Sport sources. Separate several search terms with commas.</p>
+    <details class="settings" id="settings">
+      <summary>AI settings</summary>
+      <p>The summary and analysis use your own Anthropic API key. It's saved only in this browser on this phone and sent only to Anthropic, never to GitHub or anywhere else. Set a monthly spending limit in the Anthropic Console for peace of mind. Each analysis costs roughly R0.30–R1.</p>
+      <div class="row">
+        <input id="apiKey" type="password" placeholder="sk-ant-…" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="secondary" id="saveKey" type="button">Save</button>
+      </div>
+      <div class="keystate" id="keyState"></div>
+    </details>
+  </section>
 </main>
 
 <nav role="tablist">
@@ -108,6 +159,9 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
   </button>
   <button role="tab" aria-selected="false" data-tab="sport">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 4.5h-5L8 10z"/><path d="M12 3v4M21 10l-5 0M18 19l-3.5-4.5M6 19l3.5-4.5M3 10h5"/></svg>Sport
+  </button>
+  <button role="tab" aria-selected="false" data-tab="ask">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/><path d="M11 8v6M8 11h6"/></svg>Ask
   </button>
 </nav>
 
@@ -197,7 +251,10 @@ async function load(){
     if(!r.ok) throw new Error(r.status);
     data = await r.json();
     $("#title").textContent = data.title || "Market Brief";
+    const firstLoad = !$("#topicChips").children.length;
     renderMarkets(); renderFeed("news"); renderFeed("sport"); renderStamp();
+    if(firstLoad) renderTopics();
+    if(!$("#ask").hidden) loadArchive(true); else archiveLoading = null;
   }catch(e){
     if(!data) $("#markets").innerHTML = `<div class="empty">Couldn't load data. Pull again in a moment.</div>`;
     $("#stamp").textContent = data ? $("#stamp").textContent + " · offline" : "Couldn't load data";
@@ -209,8 +266,242 @@ function setTab(tab){
   $("#markets").hidden = tab !== "markets";
   $("#news").hidden = tab !== "news";
   $("#sport").hidden = tab !== "sport";
+  $("#ask").hidden = tab !== "ask";
+  if(tab === "ask") loadArchive();
   store("tab", tab); window.scrollTo(0,0);
 }
+
+/* ---------- Ask: search + AI analysis ---------- */
+let archive = null, archiveLoading = null, topic = null, matches = [], running = null;
+const STOP = new Set("a an and are as at be by did do does for from has have how i in is it its me of on or tell than that the this to was what whats when where which who why will with about latest news happening going summary summarise summarize analysis analyse analyze".split(" "));
+
+function loadArchive(force){
+  if(archiveLoading && !force) return archiveLoading;
+  archiveLoading = fetch("archive.json?t=" + Date.now(), {cache:"no-store"})
+    .then(r => r.ok ? r.json() : null)
+    .then(j => { archive = j && Array.isArray(j.items) ? j.items : null; runSearch(); })
+    .catch(() => { archive = null; });
+  return archiveLoading;
+}
+
+function pool(){
+  if(archive && archive.length) return archive;
+  return data ? [...(data.news||[]), ...(data.sport||[])] : [];
+}
+
+function termsFor(text){
+  if(text.includes(",")) return text.split(",").map(s => s.trim().toLowerCase()).filter(s => s.length > 1);
+  return text.toLowerCase().replace(/[?!.;:"']/g, " ").split(/\s+/).filter(t => t.length > 1 && !STOP.has(t));
+}
+
+function termRegex(t){
+  const e = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp("(^|[^\\p{L}\\p{N}])" + e + "(?=$|[^\\p{L}\\p{N}])", "iu");
+}
+
+function search(query){
+  const terms = termsFor(topic ? topic.keywords : query);
+  if(!terms.length) return [];
+  const res = terms.map(termRegex);
+  return pool().map(it => {
+    const hay = it.title + " " + (it.summary || "");
+    const score = res.reduce((s, re) => s + (re.test(hay) ? (re.test(it.title) ? 2 : 1) : 0), 0);
+    return {it, score};
+  }).filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score || (b.it.published || "").localeCompare(a.it.published || ""))
+    .map(x => x.it);
+}
+
+function newsItem(n, num){
+  return `<a class="n" href="${esc(n.link)}" target="_blank" rel="noopener">
+      <div class="meta">${num ? `<span class="num">${num}</span>` : ""}<b>${esc(n.source)}</b> · ${ago(n.published)}</div>
+      <div class="t">${esc(n.title)}</div>
+      ${n.summary ? `<div class="s">${esc(n.summary)}</div>` : ""}
+    </a>`;
+}
+
+function runSearch(){
+  if(!data) return;
+  const q = $("#q").value.trim();
+  document.querySelectorAll("#topicChips .chip").forEach(c => c.setAttribute("aria-pressed", topic && c.dataset.label === topic.label));
+  if(!q){ $("#askRow").hidden = $("#matchHead").hidden = $("#matchList").hidden = true; matches = []; return; }
+  matches = search(q);
+  $("#askRow").hidden = false;
+  $("#matchInfo").textContent = !matches.length
+    ? "No direct matches. Analysis will scan the last 48 hours."
+    : `${matches.length} headline${matches.length === 1 ? "" : "s"}, last 7 days` + (matches.length < 5 ? " (analysis adds the last 48 hours for context)" : "");
+  $("#matchHead").hidden = $("#matchList").hidden = !matches.length;
+  $("#matchList").innerHTML = matches.slice(0, 60).map(n => newsItem(n)).join("");
+}
+
+function renderTopics(){
+  const topics = (data.ask && data.ask.topics) || [];
+  $("#topicChips").innerHTML = topics.map(t => {
+    const label = typeof t === "string" ? t : t.label;
+    return `<button class="chip" type="button" aria-pressed="false" data-label="${esc(label)}">${esc(label)}</button>`;
+  }).join("");
+}
+
+function marketLines(){
+  return (data.markets || []).flatMap(g => g.items.filter(q => q.ok).map(q =>
+    `${q.name}: ${fmt(q.price, q.decimals)} (${q.change_pct >= 0 ? "+" : ""}${fmt(q.change_pct)}% on the day, as of ${q.as_of})`)).join("\n");
+}
+
+function buildPrompt(question, items, broad, direct){
+  const list = items.map((n, i) => {
+    const d = n.published ? new Date(n.published).toLocaleDateString("en-ZA", {day:"numeric", month:"short", timeZone: tz}) : "";
+    return `[${i+1}] ${n.source}, ${d}: ${n.title}${n.summary ? " — " + n.summary : ""}`;
+  }).join("\n");
+  const today = new Date().toLocaleDateString("en-ZA", {weekday:"long", day:"numeric", month:"long", year:"numeric", timeZone: tz});
+  return `Today is ${today}.
+
+The reader asked about: ${question}
+${!broad ? "" : direct
+  ? `\nOnly ${direct} headline${direct === 1 ? "" : "s"} matched the topic directly (listed first, [1]–[${direct}]). The rest are other headlines from the last 48 hours; use them only where genuinely relevant.\n`
+  : "\nNo headlines matched directly, so below are ALL headlines from the last 48 hours. Use only the ones genuinely relevant to the topic; if none are, say so plainly.\n"}
+Latest market snapshot (delayed):
+${marketLines()}
+
+Headlines (title and teaser only, not full articles):
+${list}`;
+}
+
+const SYSTEM = `You are a sharp financial and current-affairs analyst writing a briefing for a South African management consultant who works mainly with asset managers, unit trust companies and other financial services firms.
+
+You receive a topic and a numbered list of recent headlines with short teasers. Work only from these headlines and the market snapshot; don't present outside knowledge as if it came from the news. You may add brief, clearly flagged background context where it helps interpretation.
+
+Write in this structure, using these exact headings:
+### Summary
+Two to four sentences: what is happening on this topic right now.
+### Key developments
+Bullet points, most important first. Cite the headlines you rely on with their numbers in square brackets, e.g. [3] or [2][7].
+### Analysis
+What it means and why it matters: drivers, likely implications for South African markets, the rand, financial services and investors, and any tension or disagreement between sources.
+### What to watch
+Two to four bullets: upcoming decisions, data releases or signals worth following.
+
+Rules: be concise and specific, about 250–400 words in total. Use plain British/South African English. Use only "### " headings, "- " bullets and **bold**; no tables. If the headlines are thin or only loosely related, say so rather than over-reaching. You only have headlines and teasers, so avoid claiming details the reader can't verify from them.`;
+
+function renderMarkdown(md, refs){
+  const inline = s => esc(s)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\[(\d{1,3})\]/g, (m, n) => {
+      const it = refs[+n - 1];
+      return it ? `<a class="ref" href="${esc(it.link)}" target="_blank" rel="noopener" title="${esc(it.source + ': ' + it.title)}">${n}</a>` : m;
+    });
+  let out = "", list = false;
+  for(const raw of md.split("\n")){
+    const line = raw.trimEnd();
+    const h = line.match(/^#{1,4}\s+(.*)/), b = line.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)/);
+    if(b){ if(!list){ out += "<ul>"; list = true; } out += `<li>${inline(b[1])}</li>`; continue; }
+    if(list){ out += "</ul>"; list = false; }
+    if(h) out += `<h3>${inline(h[1])}</h3>`;
+    else if(line.trim()) out += `<p>${inline(line)}</p>`;
+  }
+  return out + (list ? "</ul>" : "");
+}
+
+function keyGet(){ return store("anthropic_key") || ""; }
+function showKeyState(){
+  const k = keyGet();
+  $("#keyState").className = "keystate" + (k ? " ok" : "");
+  $("#keyState").textContent = k ? `Key saved (ends …${k.slice(-4)}).` : "No key saved yet.";
+}
+
+async function analyse(){
+  if(running){ running.abort(); return; }
+  const question = topic ? topic.label : $("#q").value.trim();
+  if(!question) return;
+  const key = keyGet();
+  if(!key){ $("#settings").open = true; $("#apiKey").focus(); showKeyState(); $("#keyState").textContent = "Add your Anthropic API key to use the analysis."; return; }
+
+  let items = matches.slice(0, 80), broad = false;
+  const direct = items.length;
+  if(items.length < 5){
+    const since = Date.now() - 48 * 3600e3;
+    const recent = pool().filter(n => new Date(n.published || n.first_seen || 0).getTime() >= since);
+    items = [...items, ...recent.filter(n => !items.includes(n))].slice(0, 250);
+    broad = true;
+  }
+  if(!items.length){ showAnswer(`<span class="thinking">No headlines available yet</span>`); return; }
+
+  const box = $("#answer"), btn = $("#analyse");
+  box.hidden = false; box.classList.remove("err");
+  box.innerHTML = `<span class="thinking">Reading ${items.length} headlines</span>`;
+  btn.textContent = "Stop";
+  running = new AbortController();
+  let text = "", queued = false;
+  const paint = () => { queued = false; box.innerHTML = renderMarkdown(text, items); };
+
+  try{
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST", signal: running.signal,
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: (data.ask && data.ask.model) || "claude-sonnet-5-5",
+        max_tokens: 1600, stream: true, system: SYSTEM,
+        messages: [{role: "user", content: buildPrompt(question, items, broad, direct)}]
+      })
+    });
+    if(!res.ok){
+      let msg = `Request failed (${res.status}).`;
+      try{ const j = await res.json(); if(j.error && j.error.message) msg = j.error.message; }catch(e){}
+      if(res.status === 401) msg = "Your API key wasn't accepted. Check it in AI settings below.";
+      if(res.status === 429 || res.status === 529) msg = "Claude is busy or you've hit a rate limit. Try again in a minute.";
+      throw new Error(msg);
+    }
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    let buf = "";
+    for(;;){
+      const {value, done} = await reader.read();
+      if(done) break;
+      buf += dec.decode(value, {stream: true});
+      let i;
+      while((i = buf.indexOf("\n\n")) >= 0){
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        const line = chunk.split("\n").find(l => l.startsWith("data:"));
+        if(!line) continue;
+        let ev; try{ ev = JSON.parse(line.slice(5)); }catch(e){ continue; }
+        if(ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta"){
+          text += ev.delta.text;
+          if(!queued){ queued = true; requestAnimationFrame(paint); }
+        } else if(ev.type === "error"){
+          throw new Error((ev.error && ev.error.message) || "The analysis stopped unexpectedly.");
+        }
+      }
+    }
+    paint();
+    box.insertAdjacentHTML("beforeend", `<div class="foot"><span>Based on ${direct || "no"} matching headline${direct === 1 ? "" : "s"}${broad ? ` plus ${items.length - direct} from the last 48 hours` : ""}. AI-generated; check the sources.</span><button class="secondary" type="button" id="copyAns">Copy</button></div>`);
+    $("#copyAns").onclick = () => { try{ navigator.clipboard.writeText(text); $("#copyAns").textContent = "Copied"; }catch(e){} };
+  }catch(e){
+    if(e.name === "AbortError"){ if(text) paint(); box.insertAdjacentHTML("beforeend", `<div class="foot"><span>Stopped.</span></div>`); }
+    else { box.classList.add("err"); box.textContent = e.message || "Something went wrong."; }
+  }finally{
+    running = null; btn.textContent = "Summarise & analyse";
+  }
+}
+
+function showAnswer(html){ const b = $("#answer"); b.hidden = false; b.innerHTML = html; }
+
+$("#askForm").onsubmit = e => { e.preventDefault(); topic = null; runSearch(); $("#q").blur(); };
+$("#q").addEventListener("input", () => { topic = null; clearTimeout(window._qt); window._qt = setTimeout(runSearch, 200); });
+$("#topicChips").onclick = e => {
+  const c = e.target.closest(".chip"); if(!c) return;
+  const t = ((data.ask && data.ask.topics) || []).find(x => (typeof x === "string" ? x : x.label) === c.dataset.label);
+  topic = typeof t === "string" ? {label: t, keywords: t} : t;
+  $("#q").value = topic.label; $("#answer").hidden = true; runSearch();
+};
+$("#analyse").onclick = analyse;
+$("#saveKey").onclick = () => {
+  const k = $("#apiKey").value.trim();
+  store("anthropic_key", k); $("#apiKey").value = ""; showKeyState();
+};
+showKeyState();
 
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
 for (const view of Object.keys(feedViews)) {
