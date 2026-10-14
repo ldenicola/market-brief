@@ -94,6 +94,40 @@ details.settings .row{display:flex;gap:8px;margin-top:8px}
 details.settings input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .keystate{font-size:13px;margin-top:8px}
 .keystate.ok{color:var(--up)}
+.q[data-sym]{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.q[data-sym]:active{background:var(--chip)}
+.brief{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:14px;padding:14px 16px;margin:4px 0 6px}
+.brief-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.brief-head .kicker{font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--accent)}
+.brief-head .when{font-size:12px;color:var(--muted)}
+.brief .answer{border:0;padding:0;margin:0;background:none}
+.brief .answer h3:first-child{display:none}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:600;font-size:14px;padding:6px 0 0;cursor:pointer}
+.sheet-wrap{position:fixed;inset:0;z-index:20}
+.sheet-wrap[hidden]{display:none}
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.42);animation:fade .2s ease}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:92vh;overflow-y:auto;background:var(--bg);border-radius:18px 18px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom));animation:up .24s cubic-bezier(.2,.8,.2,1);max-width:640px;margin:0 auto}
+@keyframes up{from{transform:translateY(40%);opacity:.4}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:2px auto 10px}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.d-name{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.close{border:0;background:var(--chip);border-radius:999px;width:34px;height:34px;font-size:22px;line-height:1;cursor:pointer;color:var(--ink)}
+.d-price{margin-top:10px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.d-price .big{font-family:var(--num);font-size:28px;font-variant-numeric:tabular-nums}
+.d-hover{min-height:20px;font-size:13px;color:var(--muted);margin:4px 0 10px;font-variant-numeric:tabular-nums}
+.seg{display:flex;background:var(--chip);border-radius:10px;padding:3px;gap:3px;margin-bottom:10px}
+.seg button{flex:1;border:0;background:none;border-radius:8px;padding:7px 0;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.chart{position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.chart svg{display:block;width:100%;overflow:visible}
+.chart text{font-size:10px;fill:var(--muted);font-family:var(--num)}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:14px}
+.stats div{background:var(--card);padding:10px 12px}
+.stats .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stats .v{font-family:var(--num);font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums}
+.stats .s{font-size:11px;color:var(--muted);margin-top:2px}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
 nav button{flex:1;border:0;background:none;padding:10px 0 12px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
 nav button svg{width:22px;height:22px}
@@ -150,6 +184,25 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
   </section>
 </main>
 
+<div class="sheet-wrap" id="sheet" hidden>
+  <div class="backdrop" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <div><div class="d-name" id="dTitle"></div><div class="sym" id="dSym" style="font-size:12px;color:var(--muted);margin-top:2px"></div></div>
+      <button class="close" type="button" data-close aria-label="Close">&times;</button>
+    </div>
+    <div class="d-price"><span class="big" id="dPrice"></span><span class="ch" id="dChange"></span></div>
+    <div class="d-hover" id="dHover"></div>
+    <div class="seg" id="dRange">
+      <button type="button" data-r="1">1M</button><button type="button" data-r="3">3M</button><button type="button" data-r="6">6M</button><button type="button" data-r="12">1Y</button>
+    </div>
+    <div class="chart" id="dChart"></div>
+    <div class="stats" id="dStats"></div>
+    <p class="note" id="dNote"></p>
+  </div>
+</div>
+
 <nav role="tablist">
   <button role="tab" aria-selected="true" data-tab="markets">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg>Markets
@@ -194,23 +247,39 @@ function spark(vals, cls){
 
 function esc(s){ const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; }
 
+let briefOpen = false;
+function briefingHTML(){
+  const b = data.briefing;
+  if(!b || !b.text) return "";
+  const t = new Date(b.generated_at);
+  const when = t.toLocaleDateString("en-ZA", {weekday:"short", day:"numeric", month:"short", timeZone: tz}) + " · " +
+               t.toLocaleTimeString("en-ZA", {hour:"2-digit", minute:"2-digit", timeZone: tz});
+  const parts = b.text.split(/\n(?=###\s)/);
+  const shown = briefOpen ? b.text : parts[0];
+  return `<div class="brief">
+    <div class="brief-head"><span class="kicker">Daily briefing</span><span class="when">${esc(when)}</span></div>
+    <div class="answer">${renderMarkdown(shown, b.refs || [])}</div>
+    ${parts.length > 1 ? `<button class="linkbtn" type="button" id="briefMore">${briefOpen ? "Show less" : "Read full briefing ›"}</button>` : ""}
+  </div>`;
+}
+
 function renderMarkets(){
   const el = $("#markets");
-  el.innerHTML = data.markets.map(g => `
+  el.innerHTML = briefingHTML() + data.markets.map(g => `
     <h2>${esc(g.group)}</h2>
     <div class="list">${g.items.map(q => {
       if(!q.ok) return `<div class="q"><div><div class="nm">${esc(q.name)}</div><div class="sym">${esc(q.symbol)}</div></div><div></div><div class="na">unavailable</div></div>`;
       const pct = Math.abs(q.change_pct ?? 0) < 0.005 ? 0 : q.change_pct;
       const cls = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
       const sign = pct > 0 ? "+" : pct < 0 ? "−" : "";
-      return `<div class="q">
+      return `<div class="q" data-sym="${esc(q.symbol)}" role="button" tabindex="0" aria-label="${esc(q.name)} details">
         <div><div class="nm">${esc(q.name)}</div><div class="sym">${esc(q.symbol)} · ${esc(q.as_of)}</div></div>
         <div>${spark(q.spark, cls)}</div>
         <div><div class="px">${fmt(q.price, q.decimals)}</div>
           <div class="ch ${cls}"><span class="pill">${sign}${fmt(Math.abs(pct))}%</span></div></div>
       </div>`;
     }).join("")}</div>`).join("") +
-    `<p class="note">Prices are delayed (typically 15–20 min) and show the change from the previous close. Sparklines cover about one month. Source: Yahoo Finance.</p>`;
+    `<p class="note">Tap any row for a detailed chart. Prices are delayed (typically 15–20 min) and show the change from the previous close. Sparklines cover about one month. Source: Yahoo Finance.</p>`;
 }
 
 const feedViews = {
@@ -255,6 +324,8 @@ async function load(){
     renderMarkets(); renderFeed("news"); renderFeed("sport"); renderStamp();
     if(firstLoad) renderTopics();
     if(!$("#ask").hidden) loadArchive(true); else archiveLoading = null;
+    historyLoading = null;
+    if(detailSym){ loadHistory(true).then(() => { if(detailSym) drawDetail(); }); }
   }catch(e){
     if(!data) $("#markets").innerHTML = `<div class="empty">Couldn't load data. Pull again in a moment.</div>`;
     $("#stamp").textContent = data ? $("#stamp").textContent + " · offline" : "Couldn't load data";
@@ -270,6 +341,146 @@ function setTab(tab){
   if(tab === "ask") loadArchive();
   store("tab", tab); window.scrollTo(0,0);
 }
+
+/* ---------- Market detail sheet ---------- */
+let historyData = null, historyLoading = null, detailSym = null;
+let detailRange = +(store("range") || 3);
+
+function loadHistory(force){
+  if(historyLoading && !force) return historyLoading;
+  historyLoading = fetch("history.json?t=" + Date.now(), {cache:"no-store"})
+    .then(r => r.ok ? r.json() : null)
+    .then(j => { historyData = j && j.series ? j.series : null; })
+    .catch(() => { historyData = null; historyLoading = null; });
+  return historyLoading;
+}
+
+function quoteFor(sym){
+  for(const g of data.markets) for(const q of g.items) if(q.symbol === sym) return q;
+  return null;
+}
+
+const fmtDate = (iso, year) => new Date(iso + "T12:00:00Z").toLocaleDateString("en-ZA", year ? {day:"numeric", month:"short", year:"numeric"} : {day:"numeric", month:"short"});
+const pctTxt = p => p == null ? "–" : (p > 0 ? "+" : p < 0 ? "−" : "") + fmt(Math.abs(p)) + "%";
+const clsOf = p => p > 0 ? "up" : p < 0 ? "down" : "flat";
+
+async function openDetail(sym){
+  const q = quoteFor(sym); if(!q) return;
+  detailSym = sym;
+  $("#dTitle").textContent = q.name;
+  $("#dSym").textContent = q.symbol;
+  $("#dPrice").textContent = fmt(q.price, q.decimals);
+  const c = $("#dChange"); c.className = "ch " + clsOf(q.change_pct);
+  c.innerHTML = `<span class="pill">${pctTxt(q.change_pct)}</span> today`;
+  $("#dChart").innerHTML = `<div class="empty" style="padding:70px 0">Loading chart…</div>`;
+  $("#dStats").innerHTML = ""; $("#dHover").textContent = ""; $("#dNote").textContent = "";
+  $("#sheet").hidden = false; document.body.style.overflow = "hidden";
+  if(!history.state || !history.state.sheet) history.pushState({sheet: true}, "");
+  await loadHistory();
+  if(detailSym === sym) drawDetail();
+}
+
+function closeDetail(fromPop){
+  if($("#sheet").hidden) return;
+  $("#sheet").hidden = true; document.body.style.overflow = ""; detailSym = null;
+  if(!fromPop && history.state && history.state.sheet) history.back();
+}
+
+function drawDetail(){
+  const q = quoteFor(detailSym), s = historyData && historyData[detailSym];
+  document.querySelectorAll("#dRange button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.r === detailRange));
+  if(!s || s.c.length < 2){
+    $("#dChart").innerHTML = `<div class="empty" style="padding:60px 0">Chart history isn't available yet. It appears after the next update.</div>`;
+    return;
+  }
+  const lastD = s.d[s.d.length - 1];
+  const cut = new Date(lastD + "T12:00:00Z"); cut.setUTCMonth(cut.getUTCMonth() - detailRange);
+  const cutIso = cut.toISOString().slice(0, 10);
+  let i0 = s.d.findIndex(d => d >= cutIso); if(i0 < 0 || i0 > s.d.length - 2) i0 = Math.max(0, s.d.length - 2);
+  const D = s.d.slice(i0), C = s.c.slice(i0);
+  const first = C[0], last = C[C.length - 1], chg = (last - first) / first * 100;
+  const hi = Math.max(...C), lo = Math.min(...C);
+  const yHi = Math.max(...s.c), yLo = Math.min(...s.c);
+  const cls = clsOf(chg), dec = q ? q.decimals : 2;
+  const rangeLabel = {1:"1 month", 3:"3 months", 6:"6 months", 12:"1 year"}[detailRange];
+
+  // geometry
+  const W = Math.max(280, $("#dChart").clientWidth || 340), H = 210, pl = 2, pr = 54, pt = 10, pb = 24;
+  const span = (hi - lo) || Math.abs(hi) * 0.01 || 1;
+  const x = i => pl + i / (C.length - 1) * (W - pl - pr);
+  const y = v => pt + (1 - (v - lo) / span) * (H - pt - pb);
+  const pts = C.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+  const line = "M" + pts.join("L");
+  const area = line + `L${x(C.length - 1).toFixed(1)},${H - pb}L${x(0).toFixed(1)},${H - pb}Z`;
+  const mid = (hi + lo) / 2, midI = Math.floor((C.length - 1) / 2);
+  $("#dChart").innerHTML = `<svg class="${cls}" viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(q ? q.name : "")} price chart, ${rangeLabel}">
+    <line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(hi)}" y2="${y(hi)}"/>
+    <line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(mid)}" y2="${y(mid)}" stroke-dasharray="2 4"/>
+    <line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(lo)}" y2="${y(lo)}"/>
+    <text x="${W - pr + 6}" y="${y(hi) + 3}">${fmt(hi, dec)}</text>
+    <text x="${W - pr + 6}" y="${y(mid) + 3}">${fmt(mid, dec)}</text>
+    <text x="${W - pr + 6}" y="${y(lo) + 3}">${fmt(lo, dec)}</text>
+    <path d="${area}" fill="currentColor" fill-opacity=".10"/>
+    <path d="${line}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <text x="${pl}" y="${H - 6}">${fmtDate(D[0], detailRange === 12)}</text>
+    <text x="${x(midI)}" y="${H - 6}" text-anchor="middle">${fmtDate(D[midI])}</text>
+    <text x="${W - pr}" y="${H - 6}" text-anchor="end">${fmtDate(D[D.length - 1])}</text>
+    <g id="xh" style="display:none"><line x1="0" x2="0" y1="${pt}" y2="${H - pb}" stroke="var(--muted)" stroke-dasharray="3 3"/><circle r="4.5" cx="0" cy="0" fill="currentColor" stroke="var(--bg)" stroke-width="2"/></g>
+    <rect x="0" y="0" width="${W - pr}" height="${H}" fill="transparent" id="hit"/>
+  </svg>`;
+
+  const defaultHover = () => {
+    $("#dHover").innerHTML = `<span class="${cls}">${pctTxt(chg)}</span> over ${rangeLabel}`;
+  };
+  defaultHover();
+
+  const svg = $("#dChart svg"), xh = svg.querySelector("#xh");
+  const scrub = ev => {
+    const r = svg.getBoundingClientRect();
+    const px = (ev.clientX - r.left) / r.width * W;
+    const i = Math.max(0, Math.min(C.length - 1, Math.round((px - pl) / (W - pl - pr) * (C.length - 1))));
+    xh.style.display = "";
+    xh.querySelector("line").setAttribute("x1", x(i)); xh.querySelector("line").setAttribute("x2", x(i));
+    xh.querySelector("circle").setAttribute("cx", x(i)); xh.querySelector("circle").setAttribute("cy", y(C[i]));
+    const p = (C[i] - first) / first * 100;
+    $("#dHover").innerHTML = `${fmtDate(D[i], true)}: <b style="color:var(--ink)">${fmt(C[i], dec)}</b> <span class="${clsOf(p)}">(${pctTxt(p)} from start)</span>`;
+  };
+  const end = () => { xh.style.display = "none"; defaultHover(); };
+  svg.addEventListener("pointerdown", scrub);
+  svg.addEventListener("pointermove", scrub);
+  svg.addEventListener("pointerleave", end);
+  svg.addEventListener("pointercancel", end);
+  svg.addEventListener("pointerup", ev => { if(ev.pointerType !== "mouse") end(); });
+
+  const hiI = C.indexOf(hi), loI = C.indexOf(lo);
+  const stat = (k, v, sub, c) => `<div><div class="k">${k}</div><div class="v ${c || ""}">${v}</div>${sub ? `<div class="s">${sub}</div>` : ""}</div>`;
+  $("#dStats").innerHTML =
+    stat(`Change, ${rangeLabel}`, pctTxt(chg), `${last - first >= 0 ? "+" : "−"}${fmt(Math.abs(last - first), dec)}`, cls) +
+    stat("Week", pctTxt(q && q.week_pct), "last 5 trading days", clsOf(q && q.week_pct)) +
+    stat(`High, ${rangeLabel}`, fmt(hi, dec), fmtDate(D[hiI], true)) +
+    stat(`Low, ${rangeLabel}`, fmt(lo, dec), fmtDate(D[loI], true)) +
+    stat("52-week high", fmt(yHi, dec), fmtDate(s.d[s.c.indexOf(yHi)], true)) +
+    stat("52-week low", fmt(yLo, dec), fmtDate(s.d[s.c.indexOf(yLo)], true));
+  $("#dNote").textContent = `Daily closing prices, last close ${fmtDate(lastD, true)}. Drag across the chart to read values. Source: Yahoo Finance.`;
+}
+
+$("#markets").addEventListener("click", e => {
+  if(e.target.closest("#briefMore")){ briefOpen = !briefOpen; renderMarkets(); return; }
+  if(e.target.closest("a")) return;
+  const row = e.target.closest(".q[data-sym]"); if(row) openDetail(row.dataset.sym);
+});
+$("#markets").addEventListener("keydown", e => {
+  const row = e.target.closest(".q[data-sym]");
+  if(row && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); openDetail(row.dataset.sym); }
+});
+$("#sheet").addEventListener("click", e => { if(e.target.closest("[data-close]")) closeDetail(); });
+$("#dRange").addEventListener("click", e => {
+  const b = e.target.closest("button[data-r]"); if(!b) return;
+  detailRange = +b.dataset.r; store("range", String(detailRange)); drawDetail();
+});
+document.addEventListener("keydown", e => { if(e.key === "Escape") closeDetail(); });
+window.addEventListener("popstate", () => closeDetail(true));
+window.addEventListener("resize", () => { if(detailSym && historyData) drawDetail(); });
 
 /* ---------- Ask: search + AI analysis ---------- */
 let archive = null, archiveLoading = null, topic = null, matches = [], running = null;
@@ -387,7 +598,7 @@ function renderMarkdown(md, refs){
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\[(\d{1,3})\]/g, (m, n) => {
       const it = refs[+n - 1];
-      return it ? `<a class="ref" href="${esc(it.link)}" target="_blank" rel="noopener" title="${esc(it.source + ': ' + it.title)}">${n}</a>` : m;
+      return it ? `<a class="ref" href="${esc(it.link)}" target="_blank" rel="noopener" title="${esc(it.source + ': ' + it.title)}">${n}</a>` : "";
     });
   let out = "", list = false;
   for(const raw of md.split("\n")){
