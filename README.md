@@ -1,4 +1,4 @@
-# Market Brief
+# Markets
 
 A phone-friendly page showing SA and international indices, rand exchange rates and local news headlines. It refreshes about every 15 minutes, costs nothing to run, and needs no server.
 
