@@ -35,6 +35,16 @@ Each morning, at the time set in `config.json` under `briefing` (06:30 by defaul
 - **Cost:** one call a day, typically a few cents.
 - **Timing:** GitHub sometimes starts scheduled runs late, so the briefing can appear 15–30 minutes after the set time.
 
+## Surf tab
+
+A surf forecast for your favourite spots, and for any beach in the world.
+
+- **Spots:** you start with Muizenberg, Big Bay, Long Beach and Llandudno, from `surf → spots` in `config.json`. Tap **＋ Add spot** to search any beach or town worldwide, or **📍 Here** to add where you're standing. New spots are saved on your phone.
+- **Rating (0–10):** combines estimated wave-face height, swell period, how directly the swell reaches the beach, wind (offshore best, onshore worst), your wave-size preference, and the spot's best tide if you set one.
+- **Spot settings:** tap a spot, then **Spot settings**. The most important setting is **which way the beach faces**, because it decides which winds are offshore and which swells reach the beach. For added spots it's estimated automatically, so check it.
+- **Detail:** 7 days of hourly bars, coloured by rating, with the tide curve, the best window between sunrise and sunset, and a 2-hourly table of swell, wind and tide. Drag across the chart to read any hour.
+- **Data:** live from [Open-Meteo](https://open-meteo.com/) (free for personal use, CC BY 4.0), fetched by your phone when you open the tab, so it needs no GitHub job or key. The forecasts are open-ocean models: they don't capture local sandbanks or reefs, and the tide comes from a coarse model. Use the ratings as a guide.
+
 ## The Ask tab (search and AI analysis)
 
 - **Search:** type any word or name, or tap a topic chip, to see every headline from the last 7 days that mentions it, across all News and Sport sources. Separate several terms with commas, for example `Capitec, TymeBank`.

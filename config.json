@@ -4,67 +4,192 @@
     {
       "group": "South Africa",
       "items": [
-        { "symbol": "^J203.JO", "name": "JSE All Share" },
-        { "symbol": "^J200.JO", "name": "JSE Top 40", "fallbacks": ["^JTOPI.JO", "STX40.JO"] }
+        {
+          "symbol": "^J203.JO",
+          "name": "JSE All Share"
+        },
+        {
+          "symbol": "^J200.JO",
+          "name": "JSE Top 40",
+          "fallbacks": [
+            "^JTOPI.JO",
+            "STX40.JO"
+          ]
+        }
       ]
     },
     {
       "group": "JSE sectors",
       "items": [
-        { "symbol": "^J212.JO", "name": "Financials (Fini 15)", "fallbacks": ["STXFIN.JO"] },
-        { "symbol": "^J210.JO", "name": "Resources (Resi 10)", "fallbacks": ["STXRES.JO"] },
-        { "symbol": "^J211.JO", "name": "Industrials (Indi 25)", "fallbacks": ["STXIND.JO"] },
-        { "symbol": "^J253.JO", "name": "Listed Property (SAPY)", "fallbacks": ["STXPRO.JO"] }
+        {
+          "symbol": "^J212.JO",
+          "name": "Financials (Fini 15)",
+          "fallbacks": [
+            "STXFIN.JO"
+          ]
+        },
+        {
+          "symbol": "^J210.JO",
+          "name": "Resources (Resi 10)",
+          "fallbacks": [
+            "STXRES.JO"
+          ]
+        },
+        {
+          "symbol": "^J211.JO",
+          "name": "Industrials (Indi 25)",
+          "fallbacks": [
+            "STXIND.JO"
+          ]
+        },
+        {
+          "symbol": "^J253.JO",
+          "name": "Listed Property (SAPY)",
+          "fallbacks": [
+            "STXPRO.JO"
+          ]
+        }
       ]
     },
     {
       "group": "International",
       "items": [
-        { "symbol": "^GSPC", "name": "S&P 500" },
-        { "symbol": "^IXIC", "name": "Nasdaq" },
-        { "symbol": "^DJI", "name": "Dow Jones" },
-        { "symbol": "^FTSE", "name": "FTSE 100" },
-        { "symbol": "^GDAXI", "name": "DAX" },
-        { "symbol": "^STOXX50E", "name": "Euro Stoxx 50" },
-        { "symbol": "^N225", "name": "Nikkei 225" },
-        { "symbol": "^HSI", "name": "Hang Seng" }
+        {
+          "symbol": "^GSPC",
+          "name": "S&P 500"
+        },
+        {
+          "symbol": "^IXIC",
+          "name": "Nasdaq"
+        },
+        {
+          "symbol": "^DJI",
+          "name": "Dow Jones"
+        },
+        {
+          "symbol": "^FTSE",
+          "name": "FTSE 100"
+        },
+        {
+          "symbol": "^GDAXI",
+          "name": "DAX"
+        },
+        {
+          "symbol": "^STOXX50E",
+          "name": "Euro Stoxx 50"
+        },
+        {
+          "symbol": "^N225",
+          "name": "Nikkei 225"
+        },
+        {
+          "symbol": "^HSI",
+          "name": "Hang Seng"
+        }
       ]
     },
     {
       "group": "Rand",
       "items": [
-        { "symbol": "ZAR=X", "name": "USD/ZAR", "decimals": 4 },
-        { "symbol": "EURZAR=X", "name": "EUR/ZAR", "decimals": 4 },
-        { "symbol": "GBPZAR=X", "name": "GBP/ZAR", "decimals": 4 }
+        {
+          "symbol": "ZAR=X",
+          "name": "USD/ZAR",
+          "decimals": 4
+        },
+        {
+          "symbol": "EURZAR=X",
+          "name": "EUR/ZAR",
+          "decimals": 4
+        },
+        {
+          "symbol": "GBPZAR=X",
+          "name": "GBP/ZAR",
+          "decimals": 4
+        }
       ]
     },
     {
       "group": "Commodities & Crypto",
       "items": [
-        { "symbol": "GC=F", "name": "Gold ($/oz)" },
-        { "symbol": "BZ=F", "name": "Brent crude ($/bbl)" },
-        { "symbol": "BTC-USD", "name": "Bitcoin ($)", "decimals": 0 }
+        {
+          "symbol": "GC=F",
+          "name": "Gold ($/oz)"
+        },
+        {
+          "symbol": "BZ=F",
+          "name": "Brent crude ($/bbl)"
+        },
+        {
+          "symbol": "BTC-USD",
+          "name": "Bitcoin ($)",
+          "decimals": 0
+        }
       ]
     }
   ],
   "news": {
     "max_items": 150,
     "feeds": [
-      { "name": "Business Day", "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/news/" },
-      { "name": "Business Day", "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/markets/" },
-      { "name": "Business Day", "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/economy/" },
-      { "name": "Business Day", "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/companies/" },
-      { "name": "Financial Mail", "url": "https://fm.co.za/rss/features" },
-      { "name": "Financial Mail", "url": "https://fm.co.za/rss/investing" },
-      { "name": "Financial Mail", "url": "https://fm.co.za/rss/your-money" },
-      { "name": "Financial Mail", "url": "https://fm.co.za/rss/opinion" },
-      { "name": "Moneyweb", "url": "https://www.moneyweb.co.za/feed/" },
-      { "name": "News24", "url": "https://feeds.news24.com/articles/news24/TopStories/rss" },
-      { "name": "BusinessTech", "url": "https://businesstech.co.za/news/feed/" },
-      { "name": "Daily Maverick", "url": "https://www.dailymaverick.co.za/dmrss/" },
-      { "name": "SABC", "url": "https://www.sabcnews.com/sabcnews/feed/" },
-      { "name": "EWN", "url": "https://ewn.co.za/RSS%20Feeds/Latest%20News" },
-      { "name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml" }
+      {
+        "name": "Business Day",
+        "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/news/"
+      },
+      {
+        "name": "Business Day",
+        "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/markets/"
+      },
+      {
+        "name": "Business Day",
+        "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/economy/"
+      },
+      {
+        "name": "Business Day",
+        "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/companies/"
+      },
+      {
+        "name": "Financial Mail",
+        "url": "https://fm.co.za/rss/features"
+      },
+      {
+        "name": "Financial Mail",
+        "url": "https://fm.co.za/rss/investing"
+      },
+      {
+        "name": "Financial Mail",
+        "url": "https://fm.co.za/rss/your-money"
+      },
+      {
+        "name": "Financial Mail",
+        "url": "https://fm.co.za/rss/opinion"
+      },
+      {
+        "name": "Moneyweb",
+        "url": "https://www.moneyweb.co.za/feed/"
+      },
+      {
+        "name": "News24",
+        "url": "https://feeds.news24.com/articles/news24/TopStories/rss"
+      },
+      {
+        "name": "BusinessTech",
+        "url": "https://businesstech.co.za/news/feed/"
+      },
+      {
+        "name": "Daily Maverick",
+        "url": "https://www.dailymaverick.co.za/dmrss/"
+      },
+      {
+        "name": "SABC",
+        "url": "https://www.sabcnews.com/sabcnews/feed/"
+      },
+      {
+        "name": "EWN",
+        "url": "https://ewn.co.za/RSS%20Feeds/Latest%20News"
+      },
+      {
+        "name": "BBC World",
+        "url": "https://feeds.bbci.co.uk/news/world/rss.xml"
+      }
     ]
   },
   "briefing": {
@@ -76,23 +201,100 @@
   "ask": {
     "model": "claude-sonnet-5-5",
     "topics": [
-      { "label": "Interest rates & SARB", "keywords": "SARB, Reserve Bank, repo rate, interest rate, Kganyago, inflation, MPC" },
-      { "label": "Rand", "keywords": "rand, ZAR, currency, exchange rate" },
-      { "label": "JSE", "keywords": "JSE, Top 40, All Share, listed, shares" },
-      { "label": "Asset management & unit trusts", "keywords": "asset manager, unit trust, collective investment, fund manager, Sanlam, Old Mutual, Coronation, Allan Gray, Ninety One, Satrix, FSCA, Regulation 28, retirement fund, two-pot" },
-      { "label": "Banks & insurers", "keywords": "bank, Absa, Standard Bank, FirstRand, Nedbank, Capitec, Discovery, insurer, Momentum, Santam" },
-      { "label": "Eskom & energy", "keywords": "Eskom, load shedding, electricity, power, energy, Transnet, fuel price" },
-      { "label": "Global markets", "keywords": "Fed, Wall Street, S&P, Nasdaq, Treasury, ECB, oil, gold, China, tariffs" },
-      { "label": "Springboks", "keywords": "Springboks, Springbok, Boks, Rassie, Kolisi, South Africa rugby" }
+      {
+        "label": "Interest rates & SARB",
+        "keywords": "SARB, Reserve Bank, repo rate, interest rate, Kganyago, inflation, MPC"
+      },
+      {
+        "label": "Rand",
+        "keywords": "rand, ZAR, currency, exchange rate"
+      },
+      {
+        "label": "JSE",
+        "keywords": "JSE, Top 40, All Share, listed, shares"
+      },
+      {
+        "label": "Asset management & unit trusts",
+        "keywords": "asset manager, unit trust, collective investment, fund manager, Sanlam, Old Mutual, Coronation, Allan Gray, Ninety One, Satrix, FSCA, Regulation 28, retirement fund, two-pot"
+      },
+      {
+        "label": "Banks & insurers",
+        "keywords": "bank, Absa, Standard Bank, FirstRand, Nedbank, Capitec, Discovery, insurer, Momentum, Santam"
+      },
+      {
+        "label": "Eskom & energy",
+        "keywords": "Eskom, load shedding, electricity, power, energy, Transnet, fuel price"
+      },
+      {
+        "label": "Global markets",
+        "keywords": "Fed, Wall Street, S&P, Nasdaq, Treasury, ECB, oil, gold, China, tariffs"
+      },
+      {
+        "label": "Springboks",
+        "keywords": "Springboks, Springbok, Boks, Rassie, Kolisi, South Africa rugby"
+      }
     ]
   },
   "sport": {
     "max_items": 80,
     "feeds": [
-      { "name": "Rugby", "url": "https://feeds.bbci.co.uk/sport/rugby-union/rss.xml" },
-      { "name": "Cricket", "url": "https://feeds.bbci.co.uk/sport/cricket/rss.xml" },
-      { "name": "Football", "url": "https://feeds.bbci.co.uk/sport/football/rss.xml" },
-      { "name": "More sport", "url": "https://feeds.bbci.co.uk/sport/rss.xml" }
+      {
+        "name": "Rugby",
+        "url": "https://feeds.bbci.co.uk/sport/rugby-union/rss.xml"
+      },
+      {
+        "name": "Cricket",
+        "url": "https://feeds.bbci.co.uk/sport/cricket/rss.xml"
+      },
+      {
+        "name": "Football",
+        "url": "https://feeds.bbci.co.uk/sport/football/rss.xml"
+      },
+      {
+        "name": "More sport",
+        "url": "https://feeds.bbci.co.uk/sport/rss.xml"
+      }
+    ]
+  },
+  "surf": {
+    "size": "medium",
+    "spots": [
+      {
+        "id": "muizenberg",
+        "name": "Muizenberg",
+        "place": "False Bay, Cape Town",
+        "lat": -34.108,
+        "lon": 18.471,
+        "facing": 160,
+        "tide": "any"
+      },
+      {
+        "id": "big-bay",
+        "name": "Big Bay",
+        "place": "Bloubergstrand, Cape Town",
+        "lat": -33.795,
+        "lon": 18.455,
+        "facing": 255,
+        "tide": "any"
+      },
+      {
+        "id": "long-beach",
+        "name": "Long Beach",
+        "place": "Kommetjie, Cape Town",
+        "lat": -34.131,
+        "lon": 18.328,
+        "facing": 290,
+        "tide": "any"
+      },
+      {
+        "id": "llandudno",
+        "name": "Llandudno",
+        "place": "Atlantic Seaboard, Cape Town",
+        "lat": -34.006,
+        "lon": 18.34,
+        "facing": 265,
+        "tide": "any"
+      }
     ]
   }
 }

@@ -393,6 +393,7 @@ def main() -> int:
         "sport": sport,
         "failed_sport_feeds": sport_failed,
         "ask": cfg.get("ask", {}),
+        "surf": cfg.get("surf", {}),
         "briefing": briefing,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
