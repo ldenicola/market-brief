@@ -295,6 +295,129 @@
         "facing": 265,
         "tide": "any"
       }
+    ],
+    "library": [
+      {
+        "id": "st-james",
+        "name": "St James",
+        "place": "False Bay",
+        "lat": -34.1186,
+        "lon": 18.458,
+        "facing": 125,
+        "tide": "any",
+        "swell_from": 195
+      },
+      {
+        "id": "kalk-bay",
+        "name": "Kalk Bay Reef",
+        "place": "False Bay",
+        "lat": -34.1279,
+        "lon": 18.45,
+        "facing": 110,
+        "tide": "any",
+        "swell_from": 195
+      },
+      {
+        "id": "glencairn",
+        "name": "Glencairn",
+        "place": "False Bay",
+        "lat": -34.1627,
+        "lon": 18.4343,
+        "facing": 100,
+        "tide": "any",
+        "swell_from": 190
+      },
+      {
+        "id": "strand",
+        "name": "Strand",
+        "place": "False Bay",
+        "lat": -34.115,
+        "lon": 18.824,
+        "facing": 200,
+        "tide": "any",
+        "swell_from": 205
+      },
+      {
+        "id": "kogel-bay",
+        "name": "Kogel Bay",
+        "place": "False Bay",
+        "lat": -34.24,
+        "lon": 18.852,
+        "facing": 250,
+        "tide": "any"
+      },
+      {
+        "id": "scarborough",
+        "name": "Scarborough",
+        "place": "Cape Peninsula",
+        "lat": -34.201,
+        "lon": 18.373,
+        "facing": 265,
+        "tide": "any"
+      },
+      {
+        "id": "outer-kom",
+        "name": "Outer Kommetjie",
+        "place": "Kommetjie",
+        "lat": -34.14,
+        "lon": 18.318,
+        "facing": 250,
+        "tide": "any"
+      },
+      {
+        "id": "noordhoek",
+        "name": "Noordhoek",
+        "place": "Cape Peninsula",
+        "lat": -34.112,
+        "lon": 18.356,
+        "facing": 260,
+        "tide": "any"
+      },
+      {
+        "id": "glen-beach",
+        "name": "Glen Beach",
+        "place": "Camps Bay",
+        "lat": -33.95,
+        "lon": 18.376,
+        "facing": 280,
+        "tide": "any"
+      },
+      {
+        "id": "milnerton",
+        "name": "Milnerton Lagoon Beach",
+        "place": "Table Bay",
+        "lat": -33.887,
+        "lon": 18.484,
+        "facing": 285,
+        "tide": "any"
+      },
+      {
+        "id": "melkbos",
+        "name": "Melkbosstrand",
+        "place": "West Coast",
+        "lat": -33.727,
+        "lon": 18.441,
+        "facing": 255,
+        "tide": "any"
+      },
+      {
+        "id": "voelklip",
+        "name": "Voëlklip",
+        "place": "Hermanus",
+        "lat": -34.413,
+        "lon": 19.295,
+        "facing": 175,
+        "tide": "any"
+      },
+      {
+        "id": "vic-bay",
+        "name": "Victoria Bay",
+        "place": "Garden Route",
+        "lat": -34.007,
+        "lon": 22.552,
+        "facing": 160,
+        "tide": "any"
+      }
     ]
   }
 }
