@@ -103,7 +103,7 @@ details.settings input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(
 .brief .answer{border:0;padding:0;margin:0;background:none}
 .brief .answer h3:first-child{display:none}
 .linkbtn{border:0;background:none;color:var(--accent);font-weight:600;font-size:14px;padding:6px 0 0;cursor:pointer}
-.sheet-wrap{position:fixed;inset:0;z-index:20}
+.sheet-wrap{position:fixed;inset:0;z-index:5000}
 .sheet-wrap[hidden]{display:none}
 .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.42);animation:fade .2s ease}
 .sheet{position:absolute;left:0;right:0;bottom:0;max-height:92vh;overflow-y:auto;background:var(--bg);border-radius:18px 18px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom));animation:up .24s cubic-bezier(.2,.8,.2,1);max-width:640px;margin:0 auto}
@@ -165,18 +165,21 @@ details.settings input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(
 .hrs{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px;font-variant-numeric:tabular-nums}
 .hrs th{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;text-align:left;padding:4px 4px 6px}
 .hrs td{border-top:1px solid var(--line);padding:8px 4px;vertical-align:middle}
+.hrs td b{white-space:nowrap}
 .hrs td small{display:block;color:var(--muted);font-size:11px}
 .hrs tr.night td{opacity:.55}
 .sedit{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .sedit summary{cursor:pointer;font-weight:600;font-size:14px}
 .danger{border:1px solid var(--down);color:var(--down);background:none;border-radius:10px;padding:9px 12px;font:inherit;font-size:14px;cursor:pointer}
-.surfmap{height:62vh;min-height:320px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--chip);margin-bottom:8px}
+.surfmap{position:relative;z-index:0;isolation:isolate;height:62vh;min-height:320px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--chip);margin-bottom:8px}
 .pinwrap{background:none;border:0}
 .pin{display:inline-grid;place-items:center;min-width:30px;height:30px;border-radius:15px;color:#fff;font:700 12px var(--font);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);padding:0 6px;box-sizing:border-box}
 .pin.lib{min-width:24px;height:24px;font-size:10px;border-width:1.5px;padding:0 4px}
 .pinwrap{position:relative}
 .pin-l{position:absolute;top:100%;left:50%;transform:translateX(-50%);pointer-events:none;font:600 11px var(--font);color:#1b2128;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;white-space:nowrap;margin-top:1px}
 .surfmap:not(.zoomed) .pin-l.lib{display:none}
+.dark-tiles .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.9)}
+.gpin{cursor:pointer}
 @media (prefers-color-scheme: dark){.pin-l{color:#e8edf2;text-shadow:0 0 3px #000,0 0 3px #000}}
 .legend{display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:2px 0 6px}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:6px;margin:0 2px 0 6px;vertical-align:-2px}
@@ -217,6 +220,13 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
     <div id="surfMapWrap" hidden>
       <div class="surfmap" id="surfMap"><div class="empty" style="padding-top:120px">Loading map…</div></div>
       <div class="legend" id="surfLegend"></div>
+      <details class="settings" id="mapSettings" style="margin:4px 0 8px">
+        <summary>Map settings</summary>
+        <p>The map works without a key, using free OpenStreetMap maps. To use Google Maps instead, paste a Google Maps API key with the <b>Maps JavaScript API</b> enabled. It's saved only on this phone. In Google Cloud, restrict the key to your site (<i>yourname</i>.github.io/*) so nobody else can use it.</p>
+        <div class="row"><input id="mapKey" type="password" placeholder="Google Maps API key" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="secondary" id="saveMapKey" type="button">Save</button></div>
+        <div class="row"><button class="secondary" id="clearMapKey" type="button">Use free map instead</button></div>
+        <div class="keystate" id="mapState"></div>
+      </details>
       <p class="note" style="padding-top:0">Large pins are your favourites; small pins are other Western Cape spots (zoom in to see their names). The number is the rating right now. Tap any pin for the full report.</p>
     </div>
     <div id="surfList">
@@ -823,66 +833,165 @@ function drawSpots(){
   renderSizePref();
 }
 
-let surfView = store("surfView") || "list", leafletP = null, surfMap = null, pinLayer = null, mapFitted = false;
+let surfView = store("surfView") || "list", mapApi = null, mapBuilding = null, mapFitted = false;
+const GMAPS_KEY = "gmaps_key";
+const isDark = () => !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
 
-function loadLeaflet(){
-  if(leafletP) return leafletP;
-  leafletP = new Promise((res, rej) => {
+function loadScript(src){
+  return new Promise((res, rej) => {
+    const js = document.createElement("script");
+    js.src = src; js.async = true; js.onload = res; js.onerror = () => rej(new Error("script " + src));
+    document.head.appendChild(js);
+  });
+}
+
+/* Google Maps (your key, stored only on this phone) */
+let gmLoadedKey = null, gmReject = null;
+// Google calls this global whenever it rejects the key, which can happen after the map has appeared.
+window.gm_authFailure = () => {
+  window.__gmAuthFailed = true;
+  if(gmReject){ gmReject(new Error("auth")); gmReject = null; }
+  else if(mapApi && mapApi.engine === "google") fallbackToOsm();
+};
+async function buildGoogleMap(el, key){
+  if(!(window.google && google.maps && google.maps.marker)){
+    await new Promise((res, rej) => {
+      gmReject = rej;
+      window.__gmReady = () => { gmReject = null; res(); };
+      gmLoadedKey = key;
+      loadScript(`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&libraries=marker&loading=async&callback=__gmReady`).catch(rej);
+    });
+  }
+  if(window.__gmAuthFailed) throw new Error("auth");
+  const opts = {center: {lat: -34.05, lng: 18.6}, zoom: 9, mapId: "DEMO_MAP_ID", disableDefaultUI: true,
+                zoomControl: true, gestureHandling: "greedy", clickableIcons: false};
+  if(google.maps.ColorScheme) opts.colorScheme = isDark() ? google.maps.ColorScheme.DARK : google.maps.ColorScheme.LIGHT;
+  const map = new google.maps.Map(el, opts);
+  let markers = [];
+  const zcls = () => el.classList.toggle("zoomed", (map.getZoom() || 0) >= 11);
+  map.addListener("zoom_changed", zcls);
+  return {
+    engine: "google",
+    clear(){ markers.forEach(m => m.map = null); markers = []; },
+    add(lat, lon, node, title, z, onClick){
+      node.style.transform = "translateY(50%)";             // centre the dot on the spot
+      const m = new google.maps.marker.AdvancedMarkerElement({map, position: {lat, lng: lon}, content: node, title, zIndex: z});
+      node.addEventListener("click", e => { e.stopPropagation(); onClick(); });
+      markers.push(m);
+    },
+    fit(pts){
+      const b = new google.maps.LatLngBounds(); pts.forEach(p => b.extend({lat: p[0], lng: p[1]}));
+      map.fitBounds(b, 40);
+      google.maps.event.addListenerOnce(map, "idle", () => { if(map.getZoom() > 11) map.setZoom(11); zcls(); });
+    },
+    resize(){}
+  };
+}
+
+/* OpenStreetMap via Leaflet (free, no key) */
+async function buildOsmMap(el){
+  if(!window.L){
     const css = document.createElement("link");
     css.rel = "stylesheet"; css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
     document.head.appendChild(css);
-    const js = document.createElement("script");
-    js.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
-    js.onload = () => res(window.L); js.onerror = () => { leafletP = null; rej(new Error("map library")); };
-    document.head.appendChild(js);
-  });
-  return leafletP;
+    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js");
+  }
+  el.classList.toggle("dark-tiles", isDark());
+  const map = L.map(el, {zoomControl: true}).setView([-34.05, 18.6], 9);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+  const layer = L.layerGroup().addTo(map);
+  const zcls = () => el.classList.toggle("zoomed", map.getZoom() >= 11);
+  map.on("zoomend", zcls); zcls();
+  return {
+    engine: "osm",
+    clear(){ layer.clearLayers(); },
+    add(lat, lon, node, title, z, onClick){
+      const sz = node.firstChild.classList.contains("lib") ? 24 : 30;
+      const icon = L.divIcon({className: "pinwrap", iconSize: [sz, sz], iconAnchor: [sz / 2, sz / 2], html: node.innerHTML});
+      L.marker([lat, lon], {icon, title, zIndexOffset: z, keyboard: true}).on("click", onClick).addTo(layer);
+    },
+    fit(pts){ map.fitBounds(pts, {padding: [40, 40], maxZoom: 11}); },
+    resize(){ map.invalidateSize(); }
+  };
 }
 
 async function ensureMap(){
-  if(surfMap){ surfMap.invalidateSize(); return surfMap; }
-  let L;
-  try{ L = await loadLeaflet(); }
-  catch(e){ $("#surfMap").innerHTML = `<div class="empty" style="padding-top:120px">Couldn't load the map. Check your connection and try again.</div>`; return null; }
-  $("#surfMap").innerHTML = "";
-  surfMap = L.map("surfMap", {zoomControl: true, attributionControl: true}).setView([-34.05, 18.6], 9);
-  const dark = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
-  L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? "dark_all" : "rastertiles/voyager"}/{z}/{x}/{y}{r}.png`, {
-    maxZoom: 18, subdomains: "abcd",
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-  }).addTo(surfMap);
-  pinLayer = L.layerGroup().addTo(surfMap);
-  const zcls = () => $("#surfMap").classList.toggle("zoomed", surfMap.getZoom() >= 11);
-  surfMap.on("zoomend", zcls); zcls();
-  $("#surfLegend").innerHTML = RATING.slice(1).map(r => `<span><i style="background:var(${r[2]})"></i>${r[1]}</span>`).join("");
-  return surfMap;
+  const key = store(GMAPS_KEY) || "";
+  const want = key && !window.__gmAuthFailed ? "google" : "osm";
+  if(mapApi && mapApi.engine === want){ mapApi.resize(); return mapApi; }
+  if(mapBuilding) return mapBuilding;
+  mapBuilding = (async () => {
+    const old = $("#surfMap"), el = document.createElement("div");   // fresh container when switching engine
+    el.id = "surfMap"; el.className = "surfmap"; old.replaceWith(el);
+    mapApi = null; mapFitted = false;
+    try{
+      mapApi = want === "google" ? await buildGoogleMap(el, key) : await buildOsmMap(el);
+    }catch(e){
+      if(want === "google") await fallbackToOsm();
+      else $("#surfMap").innerHTML = `<div class="empty" style="padding-top:120px">Couldn't load the map. Check your connection and try again.</div>`;
+    }
+    $("#surfLegend").innerHTML = RATING.slice(1).map(r => `<span><i style="background:var(${r[2]})"></i>${r[1]}</span>`).join("");
+    if(mapApi && !$("#mapState").dataset.err) showMapState(mapApi.engine === "google" ? "Using Google Maps with your key." : "Using OpenStreetMap (free, no key needed).");
+    mapBuilding = null;
+    return mapApi;
+  })();
+  return mapBuilding;
+}
+
+async function fallbackToOsm(){
+  const el = document.createElement("div"); el.id = "surfMap"; el.className = "surfmap"; $("#surfMap").replaceWith(el);
+  mapApi = null; mapFitted = false;
+  showMapState(window.__gmAuthFailed
+    ? "Google rejected the key, so the free map is shown instead. Check that the Maps JavaScript API is enabled for the key and that its website restriction includes this site."
+    : "Couldn't load Google Maps, so the free map is shown instead.", true);
+  try{ mapApi = await buildOsmMap(el); drawPins(); }
+  catch(e){ el.innerHTML = `<div class="empty" style="padding-top:120px">Couldn't load the map. Check your connection and try again.</div>`; }
+}
+
+function showMapState(msg, isErr){
+  const el = $("#mapState");
+  el.textContent = msg; el.style.color = isErr ? "var(--down)" : "";
+  el.dataset.err = isErr ? "1" : "";
+}
+
+function pinNode(spot, fav){
+  const c = surfCache[spot.id], fc = c && c.fc;
+  const h = fc ? fc.hours[spotNowIndex(fc)] : null;
+  const wrap = document.createElement("div");
+  wrap.className = "pinwrap gpin";
+  wrap.innerHTML = `<div class="pin ${fav ? "" : "lib"}" style="background:${h ? rColor(h.rating) : "var(--r0)"}">${h ? h.rating.toFixed(fav ? 1 : 0) : (c && c.err ? "!" : "…")}</div><div class="pin-l ${fav ? "" : "lib"}">${esc(spot.name)}</div>`;
+  return wrap;
 }
 
 function drawPins(){
-  if(!surfMap || !pinLayer || !window.L) return;
-  pinLayer.clearLayers();
+  if(!mapApi) return;
+  mapApi.clear();
   const pts = [], favPts = [];
   const add = (spot, fav) => {
-    const c = surfCache[spot.id], fc = c && c.fc;
-    const h = fc ? fc.hours[spotNowIndex(fc)] : null;
-    const bg = h ? rColor(h.rating) : "var(--r0)";
-    const txt = h ? h.rating.toFixed(fav ? 1 : 0) : (c && c.err ? "!" : "…");
-    const sz = fav ? 30 : 24;
-    const icon = L.divIcon({className: "pinwrap", iconSize: [sz, sz], iconAnchor: [sz / 2, sz / 2],
-      html: `<div class="pin ${fav ? "" : "lib"}" style="background:${bg}">${txt}</div><div class="pin-l ${fav ? "" : "lib"}">${esc(spot.name)}</div>`});
-    L.marker([spot.lat, spot.lon], {icon, title: spot.name, zIndexOffset: fav ? 1000 : 0, keyboard: true})
-      .on("click", () => openSurf(spot.id)).addTo(pinLayer);
+    mapApi.add(spot.lat, spot.lon, pinNode(spot, fav), spot.name, fav ? 1000 : 0, () => openSurf(spot.id));
     pts.push([spot.lat, spot.lon]); if(fav) favPts.push([spot.lat, spot.lon]);
   };
   libSpots().forEach(x => add(x, false));
   (surfState ? surfState.spots : []).forEach(x => add(x, true));
   if(!mapFitted && pts.length){
-    // open framed on your favourites; pan or zoom out for the rest of the Western Cape
-    const frame = favPts.length >= 2 ? favPts : pts;
-    surfMap.fitBounds(frame, {padding: [40, 40], maxZoom: 11});
+    mapApi.fit(favPts.length >= 2 ? favPts : pts);   // open framed on your favourites
     mapFitted = true;
   }
 }
+
+$("#saveMapKey").onclick = () => {
+  const k = $("#mapKey").value.trim(); if(!k) return;
+  store(GMAPS_KEY, k); $("#mapKey").value = "";
+  if(window.google && google.maps && gmLoadedKey !== k || window.__gmAuthFailed){ location.reload(); return; }
+  $("#mapState").dataset.err = "";
+  ensureMap().then(m => { if(m) drawPins(); });
+};
+$("#clearMapKey").onclick = () => {
+  store(GMAPS_KEY, ""); $("#mapState").dataset.err = "";
+  ensureMap().then(m => { if(m){ drawPins(); showMapState("Using OpenStreetMap (free, no key needed)."); } });
+};
 
 function setSurfView(v){
   surfView = v; store("surfView", v);
