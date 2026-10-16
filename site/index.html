@@ -184,6 +184,13 @@ details.settings input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(
 .legend{display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:2px 0 6px}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:6px;margin:0 2px 0 6px;vertical-align:-2px}
 .leaflet-container{font:inherit}
+#cookChips .chip{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.idea{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;text-decoration:none;color:inherit}
+.idea:active{background:var(--chip)}
+.idea .t{font-weight:700;font-size:16px}
+.idea .m{font-size:12px;color:var(--muted);margin-top:2px}
+.idea .d{font-size:14px;line-height:1.45;margin-top:6px}
+.idea .go{font-size:13px;font-weight:600;color:var(--accent);margin-top:8px}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
 nav button{flex:1;border:0;background:none;padding:10px 0 12px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
 nav button svg{width:22px;height:22px}
@@ -249,6 +256,20 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
     <p class="note">Ratings combine swell size and period, how directly the swell reaches each beach, wind (offshore is best), your size preference and, if set, the spot's best tide. They're computed from open-ocean forecast models, so local sandbanks and reefs aren't captured. Treat them as a guide. Surf heights are estimated wave faces. Forecast data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0), using models from DWD, Météo-France, ECMWF and NOAA.</p>
   </section>
   <section id="ask" role="tabpanel" hidden>
+    <div class="seg" id="askMode"><button type="button" data-m="news">News</button><button type="button" data-m="cook">Cook</button></div>
+    <div id="cookPanel" hidden>
+      <form class="askbar" id="cookForm" autocomplete="off">
+        <input id="cq" type="search" enterkeyhint="search" placeholder="e.g. lamb shoulder, quick fish supper">
+      </form>
+      <div class="chips" id="cookChips"></div>
+      <div class="row2" style="margin:2px 0 12px">
+        <button class="primary" type="button" id="cookSearch">Search NYT Cooking</button>
+        <button class="secondary" type="button" id="cookIdeas">✨ Ideas from Claude</button>
+      </div>
+      <div id="cookOut"></div>
+      <p class="note">“Search NYT Cooking” opens NYT Cooking's own search in your browser. “Ideas from Claude” suggests dishes to suit what you describe, each linked to that search. The recipes themselves always come from NYT Cooking. Sign in at cooking.nytimes.com once in your phone's browser so links open with your subscription.</p>
+    </div>
+    <div id="newsPanel">
     <form class="askbar" id="askForm" autocomplete="off">
       <input id="q" type="search" enterkeyhint="search" placeholder="Search a topic, e.g. Capitec, rand, SARB">
     </form>
@@ -261,6 +282,7 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
     <h2 id="matchHead" hidden>Matching headlines</h2>
     <div class="list" id="matchList" hidden></div>
     <p class="note" id="askNote">Searches every headline from the last 7 days across all News and Sport sources. Separate several search terms with commas.</p>
+    </div>
     <details class="settings" id="settings">
       <summary>AI settings</summary>
       <p>The summary and analysis use your own Anthropic API key. It's saved only in this browser on this phone and sent only to Anthropic, never to GitHub or anywhere else. Set a monthly spending limit in the Anthropic Console for peace of mind. Each analysis costs roughly R0.30–R1.</p>
@@ -1193,6 +1215,89 @@ $("#eDel").onclick = () => {
 };
 window.addEventListener("popstate", () => closeSurf(true));
 document.addEventListener("keydown", e => { if(e.key === "Escape") closeSurf(); });
+
+/* ---------- Cook: NYT Cooking search + ideas from Claude ---------- */
+const nytSearch = q => "https://cooking.nytimes.com/search?q=" + encodeURIComponent(q.trim());
+const COOK_CHIPS = ["Weeknight dinner", "Vegetarian", "Fish & seafood", "Slow-cooked", "Salads", "Baking", "Something for guests"];
+let cookRunning = null;
+
+function setAskMode(m){
+  store("askMode", m);
+  document.querySelectorAll("#askMode button").forEach(b => b.setAttribute("aria-pressed", b.dataset.m === m));
+  $("#cookPanel").hidden = m !== "cook"; $("#newsPanel").hidden = m !== "news";
+}
+function cookRecent(){ try{ return JSON.parse(localStorage.getItem("cookRecent") || "[]"); }catch(e){ return []; } }
+function cookRemember(q){
+  const r = [q, ...cookRecent().filter(x => x.toLowerCase() !== q.toLowerCase())].slice(0, 5);
+  try{ localStorage.setItem("cookRecent", JSON.stringify(r)); }catch(e){}
+  renderCookChips();
+}
+function renderCookChips(){
+  const recent = cookRecent();
+  $("#cookChips").innerHTML = [...recent.map(r => `<button class="chip" type="button" data-q="${esc(r)}">↺ ${esc(r)}</button>`),
+    ...COOK_CHIPS.filter(c => !recent.includes(c)).map(c => `<button class="chip" type="button" data-q="${esc(c)}">${esc(c)}</button>`)].join("");
+}
+function openNyt(q){ if(!q.trim()) return; cookRemember(q.trim()); window.open(nytSearch(q), "_blank", "noopener"); }
+
+const COOK_SYSTEM = `You suggest dishes to cook. The cook lives in Cape Town, South Africa (southern hemisphere), and searches NYT Cooking for the actual recipes, so suggest well-known dish names that a large recipe collection like NYT Cooking is likely to have. Never invent specific NYT recipe titles, authors or links.
+
+Reply with ONLY a JSON array of 5 or 6 objects, no other text:
+[{"dish": "short dish name", "search": "2 to 4 words to search on NYT Cooking", "why": "one or two sentences on why it fits the request (season, ingredients, effort)", "time": "rough total time, e.g. 40 min", "effort": "easy | medium | project"}]
+
+Vary the suggestions (cuisine, technique, effort) unless the request is very specific. Use what's in season in the cook's month and hemisphere when relevant.`;
+
+async function cookIdeas(){
+  if(cookRunning){ cookRunning.abort(); return; }
+  const q = $("#cq").value.trim();
+  if(!q){ $("#cq").focus(); return; }
+  const key = keyGet();
+  if(!key){ $("#settings").open = true; showKeyState(); $("#keyState").textContent = "Add your Anthropic API key to get ideas from Claude."; $("#apiKey").focus(); return; }
+  cookRemember(q);
+  const out = $("#cookOut"), btn = $("#cookIdeas");
+  out.innerHTML = `<div class="answer"><span class="thinking">Thinking of ideas</span></div>`;
+  btn.textContent = "Stop"; cookRunning = new AbortController();
+  const month = new Date().toLocaleDateString("en-ZA", {month: "long", timeZone: tz});
+  try{
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST", signal: cookRunning.signal,
+      headers: {"content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true"},
+      body: JSON.stringify({model: (data && data.ask && data.ask.model) || "claude-sonnet-5-5", max_tokens: 1200, system: COOK_SYSTEM,
+        messages: [{role: "user", content: `It's ${month}. What I'd like to cook: ${q}`}]})
+    });
+    if(!res.ok){
+      let msg = `Request failed (${res.status}).`;
+      try{ const j = await res.json(); if(j.error && j.error.message) msg = j.error.message; }catch(e){}
+      if(res.status === 401) msg = "Your API key wasn't accepted. Check it in AI settings below.";
+      if(res.status === 429 || res.status === 529) msg = "Claude is busy right now. Try again in a minute.";
+      throw new Error(msg);
+    }
+    const j = await res.json();
+    const text = (j.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+    const a = text.indexOf("["), b2 = text.lastIndexOf("]");
+    let ideas = [];
+    try{ ideas = JSON.parse(text.slice(a, b2 + 1)); }catch(e){}
+    ideas = (Array.isArray(ideas) ? ideas : []).filter(x => x && x.dish);
+    if(!ideas.length) throw new Error("Claude's reply couldn't be read. Try again or rephrase.");
+    out.innerHTML = ideas.map(x => `<a class="idea" href="${esc(nytSearch(x.search || x.dish))}" target="_blank" rel="noopener">
+        <div class="t">${esc(x.dish)}</div>
+        <div class="m">${[x.time, x.effort].filter(Boolean).map(esc).join(" · ")}</div>
+        ${x.why ? `<div class="d">${esc(x.why)}</div>` : ""}
+        <div class="go">Find it on NYT Cooking ›</div></a>`).join("") +
+      `<p class="note" style="padding-top:2px">Ideas by Claude. Each opens a search on NYT Cooking, so the recipes themselves come from NYT.</p>`;
+  }catch(e){
+    out.innerHTML = e.name === "AbortError" ? "" : `<div class="answer err">${esc(e.message || "Something went wrong.")}</div>`;
+  }finally{
+    cookRunning = null; btn.textContent = "✨ Ideas from Claude";
+  }
+}
+
+$("#askMode").onclick = e => { const b = e.target.closest("button[data-m]"); if(b) setAskMode(b.dataset.m); };
+$("#cookForm").onsubmit = e => { e.preventDefault(); openNyt($("#cq").value); };
+$("#cookSearch").onclick = () => openNyt($("#cq").value);
+$("#cookIdeas").onclick = cookIdeas;
+$("#cookChips").onclick = e => { const c = e.target.closest(".chip"); if(c){ $("#cq").value = c.dataset.q; $("#cq").focus(); } };
+renderCookChips();
+setAskMode(store("askMode") || "news");
 
 /* ---------- Ask: search + AI analysis ---------- */
 let archive = null, archiveLoading = null, topic = null, matches = [], running = null;
