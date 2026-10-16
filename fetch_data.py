@@ -48,10 +48,16 @@ def _clean(v):
 
 
 def fetch_markets(groups: list[dict]) -> tuple[list[dict], dict]:
-    """Returns (rows grouped for display, {symbol: {"d": dates, "c": closes}} for ~1 year)."""
+    """Returns (rows grouped for display, {symbol: {"d": dates, "c": closes}} for ~1 year).
+
+    Each item may list "fallbacks": other symbols to use if Yahoo has no current
+    data for the main one (e.g. a Satrix ETF that tracks a JSE sector index)."""
     import yfinance as yf
 
-    symbols = [it["symbol"] for g in groups for it in g["items"]]
+    def candidates(it):
+        return [it["symbol"], *it.get("fallbacks", [])]
+
+    symbols = list(dict.fromkeys(s for g in groups for it in g["items"] for s in candidates(it)))
     history: dict[str, dict] = {}
     hist = yf.download(
         symbols,
@@ -62,6 +68,16 @@ def fetch_markets(groups: list[dict]) -> tuple[list[dict], dict]:
         progress=False,
         threads=True,
     )
+    stale_before = datetime.now(timezone.utc).date() - timedelta(days=10)
+
+    def closes_for(sym):
+        try:
+            c = hist[sym]["Close"].dropna() if len(symbols) > 1 else hist["Close"].dropna()
+        except Exception:
+            return None
+        if len(c) < 2 or c.index[-1].date() < stale_before:  # missing or no longer updated
+            return None
+        return c
 
     out = []
     for g in groups:
@@ -75,8 +91,8 @@ def fetch_markets(groups: list[dict]) -> tuple[list[dict], dict]:
                 "ok": False,
             }
             try:
-                closes = hist[sym]["Close"].dropna() if len(symbols) > 1 else hist["Close"].dropna()
-                if len(closes) >= 2:
+                used, closes = next(((c, cl) for c in candidates(it) if (cl := closes_for(c)) is not None), (None, None))
+                if closes is not None:
                     last, prev = _clean(closes.iloc[-1]), _clean(closes.iloc[-2])
                     nd = it.get("decimals", 2) + 2
                     history[sym] = {
@@ -93,10 +109,15 @@ def fetch_markets(groups: list[dict]) -> tuple[list[dict], dict]:
                         as_of=closes.index[-1].strftime("%Y-%m-%d"),
                         spark=[_clean(x) for x in closes.iloc[-SPARK_POINTS:].tolist()],
                     )
+                    if used != sym:
+                        row["source_symbol"] = used
+                        if used.endswith(".JO") and not used.startswith("^"):
+                            row["proxy"] = "ETF"  # JSE ETF prices are quoted in cents
+                        print(f"[markets] {sym}: using fallback {used}", file=sys.stderr)
             except Exception as e:  # one bad symbol shouldn't sink the run
                 print(f"[markets] {sym}: {e}", file=sys.stderr)
             if not row["ok"]:
-                print(f"[markets] no data for {sym}", file=sys.stderr)
+                print(f"[markets] no data for {sym} (tried {', '.join(candidates(it))})", file=sys.stderr)
             rows.append(row)
         out.append({"group": g["group"], "items": rows})
     return out, history
@@ -244,7 +265,7 @@ def build_briefing_prompt(markets: list[dict], archive: list[dict], now_sa: date
         except (TypeError, ValueError):
             return False
 
-    news = [it for it in archive if it.get("kind") != "sport" and recent(it)][:180]
+    news = [it for it in archive if it.get("kind") != "sport" and recent(it)][:220]
     sport = [it for it in archive if it.get("kind") == "sport" and recent(it)][:25]
     refs = news + sport
 
@@ -253,7 +274,8 @@ def build_briefing_prompt(markets: list[dict], archive: list[dict], now_sa: date
         for q in g["items"]:
             if q.get("ok"):
                 wk = f", {q['week_pct']:+.2f}% over the week" if q.get("week_pct") is not None else ""
-                lines.append(f"{q['name']}: {_fmt_num(q['price'], q.get('decimals', 2))} "
+                proxy = " (via tracking ETF, price in cents; use the % moves)" if q.get("proxy") else ""
+                lines.append(f"{q['name']}{proxy}: {_fmt_num(q['price'], q.get('decimals', 2))} "
                              f"({q['change_pct']:+.2f}% on the day{wk}; as of {q['as_of']})")
 
     def fmt(i, it):

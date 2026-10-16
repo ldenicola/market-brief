@@ -5,7 +5,16 @@
       "group": "South Africa",
       "items": [
         { "symbol": "^J203.JO", "name": "JSE All Share" },
-        { "symbol": "^J200.JO", "name": "JSE Top 40" }
+        { "symbol": "^J200.JO", "name": "JSE Top 40", "fallbacks": ["^JTOPI.JO", "STX40.JO"] }
+      ]
+    },
+    {
+      "group": "JSE sectors",
+      "items": [
+        { "symbol": "^J212.JO", "name": "Financials (Fini 15)", "fallbacks": ["STXFIN.JO"] },
+        { "symbol": "^J210.JO", "name": "Resources (Resi 10)", "fallbacks": ["STXRES.JO"] },
+        { "symbol": "^J211.JO", "name": "Industrials (Indi 25)", "fallbacks": ["STXIND.JO"] },
+        { "symbol": "^J253.JO", "name": "Listed Property (SAPY)", "fallbacks": ["STXPRO.JO"] }
       ]
     },
     {
@@ -39,8 +48,15 @@
     }
   ],
   "news": {
-    "max_items": 90,
+    "max_items": 150,
     "feeds": [
+      { "name": "Business Day", "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/news/" },
+      { "name": "Business Day", "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/markets/" },
+      { "name": "Business Day", "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/economy/" },
+      { "name": "Business Day", "url": "https://www.businessday.co.za/arc/outboundfeeds/rss/category/companies/" },
+      { "name": "Financial Mail", "url": "https://www.financialmail.businessday.co.za/arc/outboundfeeds/rss/category/features/" },
+      { "name": "Financial Mail", "url": "https://www.financialmail.businessday.co.za/arc/outboundfeeds/rss/category/money-and-investing/" },
+      { "name": "Financial Mail", "url": "https://www.financialmail.businessday.co.za/arc/outboundfeeds/rss/category/opinion/" },
       { "name": "Moneyweb", "url": "https://www.moneyweb.co.za/feed/" },
       { "name": "News24", "url": "https://feeds.news24.com/articles/news24/TopStories/rss" },
       { "name": "BusinessTech", "url": "https://businesstech.co.za/news/feed/" },
