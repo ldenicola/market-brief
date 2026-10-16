@@ -174,6 +174,7 @@ def fetch_news(cfg: dict) -> tuple[list[dict], list[str]]:
             items.append(
                 {
                     "source": feed["name"],
+                    "region": feed.get("region", "sa"),
                     "title": title,
                     "link": link,
                     "summary": _teaser(e),
@@ -181,7 +182,15 @@ def fetch_news(cfg: dict) -> tuple[list[dict], list[str]]:
                 }
             )
     items.sort(key=lambda x: x["published"] or "", reverse=True)
-    return items[: cfg.get("max_items", 60)], failed
+    # Report a source as failed only if all its sections failed; otherwise say how many did.
+    total = {}
+    for f in cfg["feeds"]:
+        total[f["name"]] = total.get(f["name"], 0) + 1
+    summary = []
+    for name in dict.fromkeys(failed):
+        n = failed.count(name)
+        summary.append(name if n == total[name] else f"{name} ({n} of {total[name]} sections)")
+    return items[: cfg.get("max_items", 60)], summary
 
 
 def _site_url() -> str | None:
@@ -390,6 +399,7 @@ def main() -> int:
         "markets": markets,
         "news": news,
         "failed_feeds": failed,
+        "feed_regions": {f["name"]: f.get("region", "sa") for f in cfg["news"]["feeds"]},
         "sport": sport,
         "failed_sport_feeds": sport_failed,
         "ask": cfg.get("ask", {}),

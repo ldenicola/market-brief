@@ -18,6 +18,8 @@ After that it updates itself on the 15-minute schedule.
 
 Edit `config.json`. You can do this directly on GitHub with the pencil icon, and the next run picks it up.
 
+The News tab has a **South Africa | International** switch. Each feed in `config.json` with `"region": "intl"` (BBC World, the NYT and The Economist) appears under International; all others appear under South Africa. Several feeds can share a name (for example the four NYT sections), and they then share one chip.
+
 - **Markets:** each entry is a Yahoo Finance symbol plus a display name. To add something, find it on finance.yahoo.com and copy the symbol, for example `GC=F` for gold, `BZ=F` for Brent crude, or `^J580.JO` for an index.
 - **News:** add or remove RSS feeds. Most WordPress-based sites have one at `/feed/`.
 
@@ -42,6 +44,7 @@ A surf forecast for your favourite spots, and for any beach in the world.
 - **Spots:** you start with Muizenberg, Big Bay, Long Beach and Llandudno, from `surf → spots` in `config.json`. Tap **＋ Add spot** to search any beach or town worldwide, or **📍 Here** to add where you're standing. New spots are saved on your phone.
 - **Rating (0–10):** combines estimated wave-face height, swell period, how directly the swell reaches the beach, wind (offshore best, onshore worst), your wave-size preference, and the spot's best tide if you set one.
 - **Spot settings:** tap a spot, then **Spot settings**. The most important setting is **which way the beach faces**, because it decides which winds are offshore and which swells reach the beach. For added spots it's estimated automatically, so check it.
+- **Units:** surf and swell heights are shown in feet and wind and gusts in m/s. The model itself works in metres and km/h.
 - **Detail:** 7 days of hourly bars, coloured by rating, with the tide curve, the best window between sunrise and sunset, and a 2-hourly table of swell, wind and tide. Drag across the chart to read any hour.
 - **Map:** switch between **List** and **Map** at the top of the Surf tab. Large pins are your favourites and small pins are other Western Cape spots (`surf → library` in `config.json`). Each pin is coloured by its current rating. Tap any pin for the full report, and use **★ Add to favourites** to keep a spot. Without a key, the map uses free OpenStreetMap maps. To use **Google Maps**, open **Map settings** under the map and paste a Google Maps API key with the *Maps JavaScript API* enabled. The key is stored only on your phone. In Google Cloud Console, restrict the key to your site (`https://<your-username>.github.io/*`), because a key used in a web page is visible to anyone inspecting it. If Google rejects the key, the app switches back to the free map and tells you why. The map uses OpenStreetMap data with CARTO map tiles.
 - **Swell window (`swell_from`):** for spots that receive swell from a different direction than they face, such as east-facing False Bay spots that get southwest swell wrapping around the Peninsula, set `swell_from` in the config. The beach-facing direction is still used for wind. The library's coordinates, facing directions and swell windows are reasonable estimates. Adjust them to your local knowledge.

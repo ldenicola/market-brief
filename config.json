@@ -128,7 +128,7 @@
     }
   ],
   "news": {
-    "max_items": 150,
+    "max_items": 220,
     "feeds": [
       {
         "name": "Business Day",
@@ -188,7 +188,48 @@
       },
       {
         "name": "BBC World",
-        "url": "https://feeds.bbci.co.uk/news/world/rss.xml"
+        "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+        "region": "intl"
+      },
+      {
+        "name": "NYT",
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+        "region": "intl"
+      },
+      {
+        "name": "NYT",
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+        "region": "intl"
+      },
+      {
+        "name": "NYT",
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/Economy.xml",
+        "region": "intl"
+      },
+      {
+        "name": "NYT",
+        "url": "https://rss.nytimes.com/services/xml/rss/nyt/Africa.xml",
+        "region": "intl"
+      },
+      {
+        "name": "The Economist",
+        "url": "https://www.economist.com/leaders/rss.xml",
+        "region": "intl"
+      },
+      {
+        "name": "The Economist",
+        "url": "https://www.economist.com/finance-and-economics/rss.xml",
+        "region": "intl"
+      },
+      {
+        "name": "The Economist",
+        "url": "https://www.economist.com/business/rss.xml",
+        "region": "intl"
+      },
+      {
+        "name": "The Economist",
+        "url": "https://www.economist.com/middle-east-and-africa/rss.xml",
+        "region": "intl"
       }
     ]
   },
