@@ -43,9 +43,16 @@ A surf forecast for your favourite spots, and for any beach in the world.
 - **Rating (0–10):** combines estimated wave-face height, swell period, how directly the swell reaches the beach, wind (offshore best, onshore worst), your wave-size preference, and the spot's best tide if you set one.
 - **Spot settings:** tap a spot, then **Spot settings**. The most important setting is **which way the beach faces**, because it decides which winds are offshore and which swells reach the beach. For added spots it's estimated automatically, so check it.
 - **Detail:** 7 days of hourly bars, coloured by rating, with the tide curve, the best window between sunrise and sunset, and a 2-hourly table of swell, wind and tide. Drag across the chart to read any hour.
-- **Map:** switch between **List** and **Map** at the top of the Surf tab. Large pins are your favourites and small pins are other Western Cape spots (`surf → library` in `config.json`). Each pin is coloured by its current rating. Tap any pin for the full report, and use **★ Add to favourites** to keep a spot. The map uses OpenStreetMap data with CARTO map tiles.
+- **Map:** switch between **List** and **Map** at the top of the Surf tab. Large pins are your favourites and small pins are other Western Cape spots (`surf → library` in `config.json`). Each pin is coloured by its current rating. Tap any pin for the full report, and use **★ Add to favourites** to keep a spot. Without a key, the map uses free OpenStreetMap maps. To use **Google Maps**, open **Map settings** under the map and paste a Google Maps API key with the *Maps JavaScript API* enabled. The key is stored only on your phone. In Google Cloud Console, restrict the key to your site (`https://<your-username>.github.io/*`), because a key used in a web page is visible to anyone inspecting it. If Google rejects the key, the app switches back to the free map and tells you why. The map uses OpenStreetMap data with CARTO map tiles.
 - **Swell window (`swell_from`):** for spots that receive swell from a different direction than they face, such as east-facing False Bay spots that get southwest swell wrapping around the Peninsula, set `swell_from` in the config. The beach-facing direction is still used for wind. The library's coordinates, facing directions and swell windows are reasonable estimates. Adjust them to your local knowledge.
 - **Data:** live from [Open-Meteo](https://open-meteo.com/) (free for personal use, CC BY 4.0), fetched by your phone when you open the tab, so it needs no GitHub job or key. The forecasts are open-ocean models: they don't capture local sandbanks or reefs, and the tide comes from a coarse model. Use the ratings as a guide.
+
+## Cook (in the Ask tab)
+
+Switch the Ask tab to **Cook**.
+- **Search NYT Cooking:** type a dish or ingredient and press Enter or the button. NYT Cooking's own search opens in your browser.
+- **✨ Ideas from Claude:** describe what you have or feel like, for example "chicken thighs, lemons, under an hour". Claude suggests 5–6 dishes to suit the request and the season, each linking to a NYT Cooking search for that dish. Claude only suggests the dish ideas; the actual recipes always come from NYT Cooking. This uses the same Anthropic key as the news analysis.
+- Your recent searches appear as chips. Sign in at cooking.nytimes.com once in your phone's browser so recipes open with your subscription.
 
 ## The Ask tab (search and AI analysis)
 
