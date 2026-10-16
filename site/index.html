@@ -213,6 +213,7 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
 <main>
   <section id="markets" role="tabpanel"></section>
   <section id="news" role="tabpanel" hidden>
+    <div class="seg" id="newsRegion"><button type="button" data-r="sa">South Africa</button><button type="button" data-r="intl">International</button></div>
     <div class="chips" id="chips"></div>
     <div class="list" id="newsList"></div>
     <p class="note" id="newsNote"></p>
@@ -249,9 +250,9 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
     </div>
     <div class="lbl">Your preferred wave size</div>
     <div class="seg" id="sizePref">
-      <button type="button" data-s="small">Small<br><small>0.5–1.2 m</small></button>
-      <button type="button" data-s="medium">Medium<br><small>0.9–2 m</small></button>
-      <button type="button" data-s="big">Big<br><small>1.5–3.5 m</small></button>
+      <button type="button" data-s="small">Small<br><small>2–4 ft</small></button>
+      <button type="button" data-s="medium">Medium<br><small>3–6½ ft</small></button>
+      <button type="button" data-s="big">Big<br><small>5–11 ft</small></button>
     </div>
     <p class="note">Ratings combine swell size and period, how directly the swell reaches each beach, wind (offshore is best), your size preference and, if set, the spot's best tide. They're computed from open-ocean forecast models, so local sandbanks and reefs aren't captured. Treat them as a guide. Surf heights are estimated wave faces. Forecast data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0), using models from DWD, Météo-France, ECMWF and NOAA.</p>
   </section>
@@ -434,8 +435,14 @@ const feedViews = {
 };
 const picked = { news: "All", sport: "All" };
 
+let newsRegion = store("newsRegion") || "sa";
 function renderFeed(view){
-  const v = feedViews[view], all = data[v.key] || [];
+  const v = feedViews[view];
+  let all = data[v.key] || [];
+  if(view === "news"){
+    all = all.filter(n => (n.region || "sa") === newsRegion);
+    document.querySelectorAll("#newsRegion button").forEach(b => b.setAttribute("aria-pressed", b.dataset.r === newsRegion));
+  }
   const sources = ["All", ...new Set(all.map(n => n.source))];
   if(!sources.includes(picked[view])) picked[view] = "All";
   const source = picked[view];
@@ -447,7 +454,8 @@ function renderFeed(view){
       <div class="t">${esc(n.title)}</div>
       ${n.summary ? `<div class="s">${esc(n.summary)}</div>` : ""}
     </a>`).join("") : `<div class="empty">No headlines right now.</div>`;
-  const failed = data[v.failed] || [];
+  const regions = data.feed_regions || {};
+  const failed = (data[v.failed] || []).filter(n => view !== "news" || (regions[n.split(" (")[0]] || "sa") === newsRegion);
   $(v.note).textContent = failed.length ? "Couldn't load this time: " + failed.join(", ") : "";
 }
 
@@ -804,8 +812,15 @@ function bestWindow(fc, date, fromIdx){
   return {start: fc.hours[s].t.slice(11, 16), end: end.slice(11, 16), rating: fc.hours[top].rating};
 }
 
-const mFmt = v => v == null ? "–" : (Math.round(v * 10) / 10).toFixed(1);
-const surfRange = h => h < 0.25 ? "Flat" : `${mFmt(Math.max(0.1, h * 0.8))}–${mFmt(h * 1.15)} m`;
+// Display units: wave heights in feet, wind in m/s (the model itself works in metres and km/h).
+const FT = 3.281;
+const ftFmt = m => m == null ? "–" : String(Math.max(1, Math.round(m * FT)));
+const ms = kmh => kmh == null ? "–" : String(Math.round(kmh / 3.6));
+const surfRange = h => {
+  if(h < 0.25) return "Flat";
+  const lo = Math.max(1, Math.round(h * 0.8 * FT)), hi = Math.max(lo, Math.round(h * 1.15 * FT));
+  return lo === hi ? `${lo} ft` : `${lo}–${hi} ft`;
+};
 const arrow = d => d == null ? "" : `<svg class="wind-ar" viewBox="0 0 24 24" style="transform:rotate(${d + 180}deg)"><path d="M12 3v18M12 3l-6 7M12 3l6 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const hourLabel = h => h.surfH < 0.25 ? "Flat" : (h.rating < 3 && h.sizeS < 0.6 && h.surfH > SIZE_PREFS[surfState.size][1]) ? "Too big" : (h.rating < 3 && h.sizeS < 0.6) ? "Too small" : ratingOf(h.rating)[1];
 const rateBadge = (r, label) => `<span class="rate"><b style="background:${rColor(r)}">${r.toFixed(1)}</b>${label || ratingOf(r)[1]}</span>`;
@@ -824,8 +839,8 @@ function spotCard(spot){
   return `<button class="spot" type="button" data-spot="${esc(spot.id)}">
     ${head(rateBadge(h.rating, hourLabel(h)))}
     <div class="spot-g">
-      <div><div class="k">Surf</div><div class="v">${surfRange(h.surfH)}</div><div class="s">${h.best ? `${mFmt(h.best.h)} m @ ${Math.round(h.best.T)}s ${dirName(h.best.d)}` : "–"}</div></div>
-      <div><div class="k">Wind</div><div class="v">${arrow(h.wd)} ${h.ws == null ? "–" : Math.round(h.ws) + " km/h"}</div><div class="s">${h.wind.kind}</div></div>
+      <div><div class="k">Surf</div><div class="v">${surfRange(h.surfH)}</div><div class="s">${h.best ? `${ftFmt(h.best.h)} ft @ ${Math.round(h.best.T)}s ${dirName(h.best.d)}` : "–"}</div></div>
+      <div><div class="k">Wind</div><div class="v">${arrow(h.wd)} ${h.ws == null ? "–" : ms(h.ws) + " m/s"}</div><div class="s">${h.wind.kind}</div></div>
       <div><div class="k">Tide · water</div><div class="v">${tideTxt(h).split(",")[0]}</div><div class="s">${h.sst != null ? Math.round(h.sst) + "°C water" : "&nbsp;"}</div></div>
     </div>
     <div class="spot-best"><span>${when}: <b>${bw ? `${bw.start}–${bw.end}` : "–"}</b></span>${bw ? `<span style="color:${rColor(bw.rating)};font-weight:700">${ratingOf(bw.rating)[1]}</span>` : ""}</div>
@@ -1133,7 +1148,7 @@ function drawSurfDetail(fillEdit){
     return;
   }
   const fc = c.fc, nowI = spotNowIndex(fc), h = fc.hours[nowI];
-  $("#sNow").innerHTML = `<div class="d-price" style="margin-top:12px">${rateBadge(h.rating, hourLabel(h))}<span style="color:var(--muted);font-size:13px">now · ${surfRange(h.surfH)} · ${arrow(h.wd)} ${h.ws == null ? "" : Math.round(h.ws) + " km/h " + h.wind.kind}</span></div>`;
+  $("#sNow").innerHTML = `<div class="d-price" style="margin-top:12px">${rateBadge(h.rating, hourLabel(h))}<span style="color:var(--muted);font-size:13px">now · ${surfRange(h.surfH)} · ${arrow(h.wd)} ${h.ws == null ? "" : ms(h.ws) + " m/s " + h.wind.kind}</span></div>`;
   $("#sDays").innerHTML = fc.days.map((d, i) => {
     const mx = Math.max(0, ...fc.hours.filter(x => x.t.startsWith(d.date) && x.daylight).map(x => x.rating));
     const lbl = i === 0 ? "Today" : new Date(d.date + "T12:00:00Z").toLocaleDateString("en-ZA", {weekday: "short", day: "numeric"});
@@ -1145,11 +1160,11 @@ function drawSurfDetail(fillEdit){
   const bw = bestWindow(fc, day.date, surfDay === 0 ? nowI : 0);
   $("#sHover").innerHTML = bw ? `Best window: <b style="color:var(--ink)">${bw.start}–${bw.end}</b> <span style="color:${rColor(bw.rating)};font-weight:600">${ratingOf(bw.rating)[1]} (${bw.rating.toFixed(1)})</span>` : "";
   const rows = hrs.filter(x => +x.t.slice(11, 13) % 2 === 0 && +x.t.slice(11, 13) >= 4 && +x.t.slice(11, 13) <= 20);
-  $("#sTable").innerHTML = `<table class="hrs"><thead><tr><th>Time</th><th>Surf</th><th>Swell</th><th>Wind</th><th>Tide</th><th></th></tr></thead><tbody>${rows.map(x => `
+  $("#sTable").innerHTML = `<table class="hrs"><thead><tr><th>Time</th><th>Surf</th><th>Swell</th><th>Wind m/s</th><th>Tide</th><th></th></tr></thead><tbody>${rows.map(x => `
     <tr class="${x.daylight ? "" : "night"}"><td>${x.t.slice(11, 16)}</td>
     <td><b>${surfRange(x.surfH)}</b></td>
-    <td>${x.best ? `${mFmt(x.best.h)}m ${Math.round(x.best.T)}s<small>${dirName(x.best.d)}${x.best.exposure < 0.6 ? ", partly blocked" : ""}</small>` : "–"}</td>
-    <td>${arrow(x.wd)} ${x.ws == null ? "–" : Math.round(x.ws)}<small>${x.wind.kind}${x.gust ? `, gust ${Math.round(x.gust)}` : ""}</small></td>
+    <td>${x.best ? `${ftFmt(x.best.h)} ft ${Math.round(x.best.T)}s<small>${dirName(x.best.d)}${x.best.exposure < 0.6 ? ", partly blocked" : ""}</small>` : "–"}</td>
+    <td>${arrow(x.wd)} ${x.ws == null ? "–" : ms(x.ws)}<small>${x.wind.kind}${x.gust ? `, gust ${ms(x.gust)}` : ""}</small></td>
     <td>${tideTxt(x).replace(", ", "<small>") + (x.tideDir ? "</small>" : "")}</td>
     <td><b style="display:inline-grid;place-items:center;min-width:30px;height:22px;border-radius:6px;color:#fff;font-size:12px;background:${rColor(x.rating)}">${x.rating.toFixed(1)}</b></td></tr>`).join("")}</tbody></table>`;
   const sst = h.sst != null ? ` Water about ${Math.round(h.sst)}°C.` : "";
@@ -1159,7 +1174,7 @@ function drawSurfDetail(fillEdit){
 function drawSurfChart(hrs, fc){
   if(!hrs.length){ $("#sChart").innerHTML = ""; return; }
   const W = Math.max(280, $("#sChart").clientWidth || 340), H = 170, pt = 18, pb = 22, pl = 2, pr = 28;
-  const maxH = Math.max(1.5, ...hrs.map(x => x.surfH * 1.15));
+  const maxH = Math.max(5, ...hrs.map(x => x.surfH * 1.15 * FT));   // feet
   const bw = (W - pl - pr) / 24;
   const y = v => pt + (1 - v / maxH) * (H - pt - pb);
   const seaVals = hrs.map(x => x.sea).filter(v => v != null);
@@ -1167,11 +1182,11 @@ function drawSurfChart(hrs, fc){
   const tideY = v => pt + (1 - (v - sLo) / ((sHi - sLo) || 1)) * (H - pt - pb) * 0.9;
   const tidePts = hrs.map((x, k) => x.sea == null ? null : `${(pl + (k + 0.5) * bw).toFixed(1)},${tideY(x.sea).toFixed(1)}`).filter(Boolean);
   const ticks = [];
-  for(let m = 0; m <= maxH; m += maxH > 3 ? 1 : 0.5) ticks.push(m);
+  for(let f = 0; f <= maxH; f += maxH > 12 ? 4 : maxH > 6 ? 2 : 1) ticks.push(f);
   $("#sChart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="Hourly surf height and rating">
     ${hrs.map((x, k) => x.daylight ? "" : `<rect x="${pl + k * bw}" y="${pt - 6}" width="${bw}" height="${H - pt - pb + 6}" fill="var(--line)" opacity=".45"/>`).join("")}
-    ${ticks.map(m => `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(m)}" y2="${y(m)}"/><text x="${W - pr + 4}" y="${y(m) + 3}">${m}m</text>`).join("")}
-    ${hrs.map((x, k) => `<rect data-k="${k}" x="${(pl + k * bw + 1).toFixed(1)}" y="${y(x.surfH).toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${Math.max(1, H - pb - y(x.surfH)).toFixed(1)}" rx="2" fill="${rColor(x.rating)}"/>`).join("")}
+    ${ticks.map(m => `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(m)}" y2="${y(m)}"/><text x="${W - pr + 4}" y="${y(m) + 3}">${m}ft</text>`).join("")}
+    ${hrs.map((x, k) => `<rect data-k="${k}" x="${(pl + k * bw + 1).toFixed(1)}" y="${y(x.surfH * FT).toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${Math.max(1, H - pb - y(x.surfH * FT)).toFixed(1)}" rx="2" fill="${rColor(x.rating)}"/>`).join("")}
     ${tidePts.length > 1 ? `<polyline points="${tidePts.join(" ")}" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3" opacity=".8"/>` : ""}
     ${[0, 6, 12, 18].map(hh => `<text x="${pl + hh * bw}" y="${H - 6}">${String(hh).padStart(2, "0")}:00</text>`).join("")}
     <rect id="sHit" x="0" y="0" width="${W - pr}" height="${H}" fill="transparent"/>
@@ -1181,7 +1196,7 @@ function drawSurfChart(hrs, fc){
     const r = svg.getBoundingClientRect();
     const k = clamp(Math.floor(((ev.clientX - r.left) / r.width * W - pl) / bw), 0, hrs.length - 1), x = hrs[k];
     svg.querySelectorAll("rect[data-k]").forEach(b => b.setAttribute("opacity", +b.dataset.k === k ? 1 : .45));
-    $("#sHover").innerHTML = `${x.t.slice(11, 16)}: <b style="color:var(--ink)">${surfRange(x.surfH)}</b>, ${x.best ? `${mFmt(x.best.h)}m @ ${Math.round(x.best.T)}s ${dirName(x.best.d)}` : ""}, wind ${x.ws == null ? "–" : Math.round(x.ws) + " km/h " + x.wind.kind}, tide ${tideTxt(x).toLowerCase()} <span style="color:${rColor(x.rating)};font-weight:700">${x.rating.toFixed(1)}</span>`;
+    $("#sHover").innerHTML = `${x.t.slice(11, 16)}: <b style="color:var(--ink)">${surfRange(x.surfH)}</b>, ${x.best ? `${ftFmt(x.best.h)} ft @ ${Math.round(x.best.T)}s ${dirName(x.best.d)}` : ""}, wind ${x.ws == null ? "–" : ms(x.ws) + " m/s " + x.wind.kind}, tide ${tideTxt(x).toLowerCase()} <span style="color:${rColor(x.rating)};font-weight:700">${x.rating.toFixed(1)}</span>`;
   };
   const reset = () => { svg.querySelectorAll("rect[data-k]").forEach(b => b.removeAttribute("opacity")); drawSurfDetailHoverReset(fc); };
   svg.addEventListener("pointerdown", show); svg.addEventListener("pointermove", show);
@@ -1532,6 +1547,11 @@ $("#saveKey").onclick = () => {
 showKeyState();
 
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+$("#newsRegion").onclick = e => {
+  const b = e.target.closest("button[data-r]"); if(!b || !data) return;
+  newsRegion = b.dataset.r; store("newsRegion", newsRegion); picked.news = "All";
+  renderFeed("news"); window.scrollTo(0, 0);
+};
 for (const view of Object.keys(feedViews)) {
   $(feedViews[view].chips).onclick = e => {
     const b = e.target.closest(".chip");
