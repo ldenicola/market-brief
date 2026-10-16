@@ -263,6 +263,10 @@ function briefingHTML(){
   </div>`;
 }
 
+function symLabel(q){
+  return q.proxy ? `${esc(q.source_symbol)} <span title="Yahoo has no current data for the index itself, so this shows the Satrix ETF that tracks it">ETF</span>` : esc(q.symbol);
+}
+
 function renderMarkets(){
   const el = $("#markets");
   el.innerHTML = briefingHTML() + data.markets.map(g => `
@@ -273,7 +277,7 @@ function renderMarkets(){
       const cls = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
       const sign = pct > 0 ? "+" : pct < 0 ? "−" : "";
       return `<div class="q" data-sym="${esc(q.symbol)}" role="button" tabindex="0" aria-label="${esc(q.name)} details">
-        <div><div class="nm">${esc(q.name)}</div><div class="sym">${esc(q.symbol)} · ${esc(q.as_of)}</div></div>
+        <div><div class="nm">${esc(q.name)}</div><div class="sym">${symLabel(q)} · ${fmtDate(q.as_of)}</div></div>
         <div>${spark(q.spark, cls)}</div>
         <div><div class="px">${fmt(q.price, q.decimals)}</div>
           <div class="ch ${cls}"><span class="pill">${sign}${fmt(Math.abs(pct))}%</span></div></div>
@@ -368,7 +372,7 @@ async function openDetail(sym){
   const q = quoteFor(sym); if(!q) return;
   detailSym = sym;
   $("#dTitle").textContent = q.name;
-  $("#dSym").textContent = q.symbol;
+  $("#dSym").innerHTML = symLabel(q) + (q.proxy ? " · tracks the index; price in cents, % moves match" : "");
   $("#dPrice").textContent = fmt(q.price, q.decimals);
   const c = $("#dChange"); c.className = "ch " + clsOf(q.change_pct);
   c.innerHTML = `<span class="pill">${pctTxt(q.change_pct)}</span> today`;
@@ -555,7 +559,7 @@ function renderTopics(){
 
 function marketLines(){
   return (data.markets || []).flatMap(g => g.items.filter(q => q.ok).map(q =>
-    `${q.name}: ${fmt(q.price, q.decimals)} (${q.change_pct >= 0 ? "+" : ""}${fmt(q.change_pct)}% on the day, as of ${q.as_of})`)).join("\n");
+    `${q.name}${q.proxy ? " (via tracking ETF, price in cents; use the % moves)" : ""}: ${fmt(q.price, q.decimals)} (${q.change_pct >= 0 ? "+" : ""}${fmt(q.change_pct)}% on the day, as of ${q.as_of})`)).join("\n");
 }
 
 function buildPrompt(question, items, broad, direct){
