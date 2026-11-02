@@ -383,6 +383,56 @@ def update_archive(previous: list[dict], news: list[dict], sport: list[dict]) ->
     return kept[:ARCHIVE_MAX]
 
 
+# ---------------------------------------------------------------- beach water quality (City of Cape Town)
+
+BEACH_API = "https://beachalerts.capetown.gov.za/api"
+BEACH_MIN_AGE = timedelta(minutes=55)   # the City updates twice a day on weekdays; be gentle
+BEACH_FIELDS = ("id", "name", "code", "latitude", "longitude", "coastline", "status", "enterococci",
+                "lastSampleDate", "shortTermFlag", "longTermFlag", "currentStatus", "detailUrl")
+ALERT_FIELDS = ("key", "title", "category", "subtype", "message", "activeFrom", "activeUntil",
+                "resolutionNote", "seawaterState", "sandState", "coastState", "affectedBeachCodes")
+
+
+def _get_json(url: str):
+    req = urllib.request.Request(url, headers={"User-Agent": "Markets personal app (GitHub Pages)", "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def update_beaches(cfg: dict) -> dict | None:
+    """Coastal water quality for Cape Town beaches, from the City's Beach Alerts site.
+    Reuses the last published copy if it's less than an hour old or the City's site is unavailable."""
+    if not cfg.get("water", {}).get("enabled", True):
+        return None
+    previous = load_previous("beaches.json")
+    now = datetime.now(timezone.utc)
+    if isinstance(previous, dict) and previous.get("fetched_at"):
+        try:
+            if now - datetime.fromisoformat(previous["fetched_at"]) < BEACH_MIN_AGE:
+                return previous
+        except ValueError:
+            pass
+    try:
+        b = _get_json(BEACH_API + "/beaches")
+        beaches = b.get("beaches", b) if isinstance(b, dict) else b
+        try:
+            alerts = _get_json(BEACH_API + "/alerts/active")
+        except Exception as e:
+            print(f"[beaches] alerts unavailable ({e})", file=sys.stderr)
+            alerts = (previous or {}).get("alerts", [])
+        out = {
+            "fetched_at": now.isoformat(),
+            "source_updated": b.get("lastUpdated") if isinstance(b, dict) else None,
+            "beaches": [{k: x.get(k) for k in BEACH_FIELDS} for x in beaches if x.get("latitude") and x.get("longitude")],
+            "alerts": [{k: a.get(k) for k in ALERT_FIELDS} for a in (alerts if isinstance(alerts, list) else [])],
+        }
+        print(f"[beaches] {len(out['beaches'])} beaches, {len(out['alerts'])} active alerts")
+        return out
+    except Exception as e:
+        print(f"[beaches] fetch failed, keeping previous ({e})", file=sys.stderr)
+        return previous if isinstance(previous, dict) else None
+
+
 def main() -> int:
     cfg = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
     markets, history = fetch_markets(cfg["markets"])
@@ -394,7 +444,7 @@ def main() -> int:
     now_iso = datetime.now(timezone.utc).isoformat()
 
     payload = {
-        "title": cfg.get("title", "Market Brief"),
+        "title": cfg.get("title", "Markets"),
         "generated_at": now_iso,
         "markets": markets,
         "news": news,
@@ -404,6 +454,7 @@ def main() -> int:
         "failed_sport_feeds": sport_failed,
         "ask": cfg.get("ask", {}),
         "surf": cfg.get("surf", {}),
+        "water": cfg.get("water", {}),
         "briefing": briefing,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -416,6 +467,9 @@ def main() -> int:
     write(ROOT / "site" / "history.json", {"generated_at": now_iso, "series": history})
     if briefing:
         write(ROOT / "site" / "briefing.json", briefing)
+    beaches = update_beaches(cfg)
+    if beaches:
+        write(ROOT / "site" / "beaches.json", beaches)
     print(f"Archive: {len(archive)} headlines over the last {ARCHIVE_DAYS} days"
           f" | briefing: {briefing['date'] if briefing else 'none'}")
 

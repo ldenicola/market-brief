@@ -50,6 +50,14 @@ A surf forecast for your favourite spots, and for any beach in the world.
 - **Swell window (`swell_from`):** for spots that receive swell from a different direction than they face, such as east-facing False Bay spots that get southwest swell wrapping around the Peninsula, set `swell_from` in the config. The beach-facing direction is still used for wind. The library's coordinates, facing directions and swell windows are reasonable estimates. Adjust them to your local knowledge.
 - **Data:** live from [Open-Meteo](https://open-meteo.com/) (free for personal use, CC BY 4.0), fetched by your phone when you open the tab, so it needs no GitHub job or key. The forecasts are open-ocean models: they don't capture local sandbanks or reefs, and the tide comes from a coarse model. Use the ratings as a guide.
 
+## Water quality (in the Surf tab)
+
+Switch the Surf tab to **💧 Water quality**. The data covers 72 Cape Town beaches and tidal pools from the City of Cape Town's [Beach Alerts](https://beachalerts.capetown.gov.za) site, which the update job checks at most once an hour.
+- **List:** your saved beaches, each with the latest sample result (green: within guidelines; amber: latest sample over the limit; red: over the limit twice in a row), the bacteria count and sample date, the 365-day rating (Excellent, Good, Sufficient or Poor) and any active pollution alerts. **＋ Add beach** searches the 72 monitored beaches. The default saved beaches are set under `water → favourites` in `config.json`, using the City's beach codes.
+- **Map:** every monitored beach, coloured by either the **latest result** or the **365-day rating**. Saved beaches are large and named, and beaches with a problem or an alert are marked. Tap any pin for its report and a link to its full City page (8 recent results, lifeguards, weather).
+- **Surf reports** show the water quality at the nearest monitored beach (within 2.5 km). Tap it for that beach's report.
+- **Timing:** the City tests most beaches weekly and publishes results at least 72 hours after sampling, so results describe the water a few days earlier.
+
 ## Cook (in the Ask tab)
 
 Switch the Ask tab to **Cook**.

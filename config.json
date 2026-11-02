@@ -460,5 +460,14 @@
         "tide": "any"
       }
     ]
+  },
+  "water": {
+    "enabled": true,
+    "favourites": [
+      "CS34",
+      "XCN12",
+      "XCN02",
+      "XCN03"
+    ]
   }
 }
