@@ -191,6 +191,21 @@ details.settings input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(
 .idea .m{font-size:12px;color:var(--muted);margin-top:2px}
 .idea .d{font-size:14px;line-height:1.45;margin-top:6px}
 .idea .go{font-size:13px;font-weight:600;color:var(--accent);margin-top:8px}
+:root{--wq-ex:#2563eb;--wq-red:#dc2626;--wq-amb:#d97706}
+@media (prefers-color-scheme: dark){:root{--wq-ex:#60a5fa;--wq-red:#ef4444;--wq-amb:#fbbf24}}
+.pin.dot{min-width:15px;width:15px;height:15px;padding:0;font-size:9px;border-width:1.5px}
+.wq{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px;white-space:nowrap}
+.wq i{display:inline-block;width:12px;height:12px;border-radius:6px;flex:0 0 auto}
+.wq-big{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:12px}
+.wq-big .dot{width:40px;height:40px;border-radius:20px;flex:0 0 auto;display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px}
+.wq-big .h{font-weight:700;font-size:15px}
+.wq-big .t{font-size:13px;color:var(--muted);line-height:1.45;margin-top:2px}
+.alert-card{background:color-mix(in srgb,var(--r2) 12%,var(--card));border:1px solid color-mix(in srgb,var(--r2) 45%,var(--line));border-radius:14px;padding:12px 14px;margin-bottom:10px;font-size:13px;line-height:1.45}
+.alert-card b{display:block;font-size:14px;margin-bottom:3px}
+.alert-card .w{color:var(--muted);font-size:12px;margin-top:4px}
+.alert-card button{border:0;background:none;color:var(--accent);font:inherit;font-weight:600;padding:2px 0;cursor:pointer;text-align:left}
+.wline{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:13px;cursor:pointer;width:100%;font-family:inherit;color:inherit;text-align:left}
+.pin .warn{position:absolute;top:-7px;right:-9px;font-size:12px}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
 nav button{flex:1;border:0;background:none;padding:10px 0 12px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
 nav button svg{width:22px;height:22px}
@@ -224,6 +239,7 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
     <p class="note" id="sportNote"></p>
   </section>
   <section id="surf" role="tabpanel" hidden>
+    <div class="seg" id="surfMode"><button type="button" data-m="surf">🏄 Surf</button><button type="button" data-m="water">💧 Water quality</button></div>
     <div class="seg" id="surfView"><button type="button" data-v="list">List</button><button type="button" data-v="map">Map</button></div>
     <div id="surfMapWrap" hidden>
       <div class="surfmap" id="surfMap"><div class="empty" style="padding-top:120px">Loading map…</div></div>
@@ -235,7 +251,8 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
         <div class="row"><button class="secondary" id="clearMapKey" type="button">Use free map instead</button></div>
         <div class="keystate" id="mapState"></div>
       </details>
-      <p class="note" style="padding-top:0">Large pins are your favourites; small pins are other Western Cape spots (zoom in to see their names). The number is the rating right now. Tap any pin for the full report.</p>
+      <div class="seg" id="wqBasis" hidden style="margin:2px 0 8px"><button type="button" data-b="latest">Latest result</button><button type="button" data-b="year">365-day rating</button></div>
+      <p class="note surf-only" style="padding-top:0">Large pins are your favourites; small pins are other Western Cape spots (zoom in to see their names). The number is the rating right now. Tap any pin for the full report.</p>
     </div>
     <div id="surfList">
     <div class="surf-top">
@@ -248,6 +265,17 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
     </div>
     <div id="spots"></div>
     </div>
+    <div id="waterList" hidden>
+      <div id="wqAlerts"></div>
+      <div class="surf-top"><button class="primary" type="button" id="addBeachBtn">＋ Add beach</button></div>
+      <div class="addpanel" id="beachAdd" hidden>
+        <input id="beachQ" type="search" enterkeyhint="search" placeholder="Search Cape Town beaches and tidal pools" autocomplete="off">
+        <div class="res" id="beachRes"></div>
+      </div>
+      <div id="beachCards"></div>
+    </div>
+    <p class="note water-only" id="wqNote" hidden></p>
+    <div class="surf-only">
     <div class="lbl">Your preferred wave size</div>
     <div class="seg" id="sizePref">
       <button type="button" data-s="small">Small<br><small>2–4 ft</small></button>
@@ -255,6 +283,7 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
       <button type="button" data-s="big">Big<br><small>5–11 ft</small></button>
     </div>
     <p class="note">Ratings combine swell size and period, how directly the swell reaches each beach, wind (offshore is best), your size preference and, if set, the spot's best tide. They're computed from open-ocean forecast models, so local sandbanks and reefs aren't captured. Treat them as a guide. Surf heights are estimated wave faces. Forecast data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0), using models from DWD, Météo-France, ECMWF and NOAA.</p>
+      </div>
   </section>
   <section id="ask" role="tabpanel" hidden>
     <div class="seg" id="askMode"><button type="button" data-m="news">News</button><button type="button" data-m="cook">Cook</button></div>
@@ -315,6 +344,21 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
   </div>
 </div>
 
+<div class="sheet-wrap" id="beachSheet" hidden style="z-index:5001">
+  <div class="backdrop" data-bclose></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="bTitle">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <div><div class="d-name" id="bTitle"></div><div class="spot-p" id="bPlace"></div></div>
+      <button class="close" type="button" data-bclose aria-label="Close">&times;</button>
+    </div>
+    <div id="bBody"></div>
+    <button class="primary" type="button" id="bFav" style="width:100%;margin-top:14px"></button>
+    <a class="secondary" id="bLink" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;text-decoration:none;color:inherit"></a>
+    <p class="note" id="bNote"></p>
+  </div>
+</div>
+
 <div class="sheet-wrap" id="surfSheet" hidden>
   <div class="backdrop" data-sclose></div>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sTitle">
@@ -324,6 +368,7 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
       <button class="close" type="button" data-sclose aria-label="Close">&times;</button>
     </div>
     <div id="sNow"></div>
+    <div id="sWater"></div>
     <div class="days" id="sDays"></div>
     <div class="chart" id="sChart"></div>
     <div class="d-hover" id="sHover"></div>
@@ -479,7 +524,7 @@ async function load(){
     if(firstLoad) renderTopics();
     if(!$("#ask").hidden) loadArchive(true); else archiveLoading = null;
     historyLoading = null;
-    if(!$("#surf").hidden) renderSurf(true);
+    if(!$("#surf").hidden){ wqLoading = null; renderSurf(true); }
     if(detailSym){ loadHistory(true).then(() => { if(detailSym) drawDetail(); }); }
   }catch(e){
     if(!data) $("#markets").innerHTML = `<div class="empty">Couldn't load data. Pull again in a moment.</div>`;
@@ -870,7 +915,7 @@ function drawSpots(){
   renderSizePref();
 }
 
-let surfView = store("surfView") || "list", mapApi = null, mapBuilding = null, mapFitted = false;
+let surfView = store("surfView") || "list", mapApi = null, mapBuilding = null, fittedFor = null;
 const GMAPS_KEY = "gmaps_key";
 const isDark = () => !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
 
@@ -945,7 +990,7 @@ async function buildOsmMap(el){
     engine: "osm",
     clear(){ layer.clearLayers(); },
     add(lat, lon, node, title, z, onClick){
-      const sz = node.firstChild.classList.contains("lib") ? 24 : 30;
+      const sz = +node.dataset.size || (node.firstChild.classList.contains("lib") ? 24 : 30);
       const icon = L.divIcon({className: "pinwrap", iconSize: [sz, sz], iconAnchor: [sz / 2, sz / 2], html: node.innerHTML});
       L.marker([lat, lon], {icon, title, zIndexOffset: z, keyboard: true}).on("click", onClick).addTo(layer);
     },
@@ -962,14 +1007,13 @@ async function ensureMap(){
   mapBuilding = (async () => {
     const old = $("#surfMap"), el = document.createElement("div");   // fresh container when switching engine
     el.id = "surfMap"; el.className = "surfmap"; old.replaceWith(el);
-    mapApi = null; mapFitted = false;
+    mapApi = null; fittedFor = null;
     try{
       mapApi = want === "google" ? await buildGoogleMap(el, key) : await buildOsmMap(el);
     }catch(e){
       if(want === "google") await fallbackToOsm();
       else $("#surfMap").innerHTML = `<div class="empty" style="padding-top:120px">Couldn't load the map. Check your connection and try again.</div>`;
     }
-    $("#surfLegend").innerHTML = RATING.slice(1).map(r => `<span><i style="background:var(${r[2]})"></i>${r[1]}</span>`).join("");
     if(mapApi && !$("#mapState").dataset.err) showMapState(mapApi.engine === "google" ? "Using Google Maps with your key." : "Using OpenStreetMap (free, no key needed).");
     mapBuilding = null;
     return mapApi;
@@ -979,7 +1023,7 @@ async function ensureMap(){
 
 async function fallbackToOsm(){
   const el = document.createElement("div"); el.id = "surfMap"; el.className = "surfmap"; $("#surfMap").replaceWith(el);
-  mapApi = null; mapFitted = false;
+  mapApi = null; fittedFor = null;
   showMapState(window.__gmAuthFailed
     ? "Google rejected the key, so the free map is shown instead. Check that the Maps JavaScript API is enabled for the key and that its website restriction includes this site."
     : "Couldn't load Google Maps, so the free map is shown instead.", true);
@@ -1005,6 +1049,8 @@ function pinNode(spot, fav){
 function drawPins(){
   if(!mapApi) return;
   mapApi.clear();
+  if(surfMode === "water") return drawBeachPins();
+  $("#surfLegend").innerHTML = RATING.slice(1).map(r => `<span><i style="background:var(${r[2]})"></i>${r[1]}</span>`).join("");
   const pts = [], favPts = [];
   const add = (spot, fav) => {
     mapApi.add(spot.lat, spot.lon, pinNode(spot, fav), spot.name, fav ? 1000 : 0, () => openSurf(spot.id));
@@ -1012,9 +1058,9 @@ function drawPins(){
   };
   libSpots().forEach(x => add(x, false));
   (surfState ? surfState.spots : []).forEach(x => add(x, true));
-  if(!mapFitted && pts.length){
+  if(fittedFor !== "surf" && pts.length){
     mapApi.fit(favPts.length >= 2 ? favPts : pts);   // open framed on your favourites
-    mapFitted = true;
+    fittedFor = "surf";
   }
 }
 
@@ -1032,14 +1078,26 @@ $("#clearMapKey").onclick = () => {
 
 function setSurfView(v){
   surfView = v; store("surfView", v);
+  const water = surfMode === "water";
   document.querySelectorAll("#surfView button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
+  document.querySelectorAll("#surfMode button").forEach(b => b.setAttribute("aria-pressed", b.dataset.m === surfMode));
   $("#surfMapWrap").hidden = v !== "map";
-  $("#surfList").hidden = v !== "list";
-  if(v === "map") ensureMap().then(m => { if(m){ drawPins(); loadLibrary(); } });
+  $("#surfList").hidden = v !== "list" || water;
+  $("#waterList").hidden = v !== "list" || !water;
+  document.querySelectorAll("#surf .surf-only").forEach(e => e.hidden = water);
+  document.querySelectorAll("#surf .water-only").forEach(e => e.hidden = !water);
+  $("#wqBasis").hidden = !water;
+  if(water){ loadWater(); if(v === "list") drawWater(); }
+  if(v === "map") ensureMap().then(m => { if(m){ drawPins(); if(!water) loadLibrary(); } });
 }
+$("#surfMode").onclick = e => {
+  const b = e.target.closest("button[data-m]"); if(!b) return;
+  surfMode = b.dataset.m; store("surfMode", surfMode); setSurfView(surfView);
+};
 $("#surfView").onclick = e => { const b = e.target.closest("button[data-v]"); if(b) setSurfView(b.dataset.v); };
 
 function renderSurf(fetchAll){
+  loadWater();
   const st = surfLoadState();
   drawSpots();
   if(st && fetchAll) st.spots.forEach(s => loadSpot(s));
@@ -1136,6 +1194,7 @@ function drawSurfDetail(fillEdit){
   const c = surfCache[spot.id], fav = isFav(spot.id);
   $("#sEdit").hidden = !fav; $("#sFav").hidden = fav;
   $("#sTitle").textContent = spot.name;
+  $("#sWater").innerHTML = waterLine(spot);
   $("#sPlace").textContent = `${spot.place ? spot.place + " · " : ""}faces ${dirName(spot.facing)}${spot.estimated ? " (estimated, adjust in settings)" : ""} · best tide: ${spot.tide}`;
   if(fillEdit){
     $("#eName").value = spot.name;
@@ -1230,6 +1289,189 @@ $("#eDel").onclick = () => {
 };
 window.addEventListener("popstate", () => closeSurf(true));
 document.addEventListener("keydown", e => { if(e.key === "Escape") closeSurf(); });
+
+/* ---------- Water quality: City of Cape Town Beach Alerts ---------- */
+const WQ_SITE = "https://beachalerts.capetown.gov.za";
+const WQ_LATEST = {green: ["Within guidelines", "--r4", "✓"], amber: ["Latest over limit", "--wq-amb", "!"], red: ["Over limit twice", "--wq-red", "!!"]};
+const WQ_YEAR = {Excellent: "--wq-ex", Good: "--r4", Sufficient: "--wq-amb", Poor: "--wq-red"};
+const WQ_YEAR_TXT = {Excellent: "Excellent: very consistently clean over the past year.", Good: "Good: consistently within guidelines over the past year.",
+  Sufficient: "Sufficient: mostly within guidelines, with occasional high results over the past year.", Poor: "Poor: frequent results above the guideline over the past year."};
+let wq = null, wqLoading = null, surfMode = store("surfMode") || "surf", wqBasis = store("wqBasis") || "latest", beachOpen = null;
+
+function loadWater(force){
+  if(wqLoading && !force) return wqLoading;
+  wqLoading = fetch("beaches.json?t=" + Date.now(), {cache: "no-store"})
+    .then(r => r.ok ? r.json() : null)
+    .then(j => { if(j && Array.isArray(j.beaches)) wq = j; afterWater(); })
+    .catch(() => { afterWater(); });
+  return wqLoading;
+}
+function afterWater(){
+  if($("#surf").hidden) return;
+  if(surfMode === "water"){ if(surfView === "list") drawWater(); else drawPins(); }
+  if(surfOpen) $("#sWater").innerHTML = waterLine(findSpot(surfOpen) || {});
+  if(beachOpen) drawBeach();
+}
+
+function beachFavs(){
+  try{ const a = JSON.parse(localStorage.getItem("beach_favs") || "null"); if(Array.isArray(a)) return a; }catch(e){}
+  return ((data && data.water && data.water.favourites) || []).slice();
+}
+function saveBeachFavs(a){ try{ localStorage.setItem("beach_favs", JSON.stringify(a)); }catch(e){} }
+const beachBy = code => wq && wq.beaches.find(b => b.code === code);
+const alertsFor = code => ((wq && wq.alerts) || []).filter(a => (a.affectedBeachCodes || []).includes(code));
+function wqLatest(b){
+  const k = String(b.currentStatus || b.shortTermFlag || "").toLowerCase(), v = WQ_LATEST[k];
+  return v ? {k, label: v[0], color: `var(${v[1]})`, glyph: v[2]} : {k: "none", label: "No recent result", color: "var(--r0)", glyph: "?"};
+}
+function wqYear(b){
+  const c = WQ_YEAR[b.longTermFlag];
+  return {label: c ? b.longTermFlag : "Not rated", color: c ? `var(${c})` : "var(--r0)", glyph: c ? b.longTermFlag[0] : "?"};
+}
+const coastName = c => c === "false_bay" ? "False Bay" : c === "atlantic" ? "Atlantic" : "";
+function sampleDay(d){
+  if(!d) return "date unknown";
+  const t = new Date(d + "T12:00:00"), days = Math.round((Date.now() - t) / 864e5);
+  const ds = t.toLocaleDateString("en-ZA", {day: "numeric", month: "short"});
+  return `${ds} (${days <= 0 ? "today" : days === 1 ? "yesterday" : days + " days ago"})`;
+}
+function haversine(a, b){
+  const r = Math.PI / 180, dLat = (b[0] - a[0]) * r, dLon = (b[1] - a[1]) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dLon / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+function nearestBeach(lat, lon, maxKm){
+  if(!wq || lat == null) return null;
+  let best = null, bd = Infinity;
+  for(const b of wq.beaches){ const d = haversine([lat, lon], [b.latitude, b.longitude]); if(d < bd){ bd = d; best = b; } }
+  return bd <= (maxKm || 2.5) ? {beach: best, km: bd} : null;
+}
+function waterLine(spot){
+  const n = spot && nearestBeach(spot.lat, spot.lon, 2.5); if(!n) return "";
+  const b = n.beach, l = wqLatest(b), y = wqYear(b), warn = alertsFor(b.code).length ? " ⚠" : "";
+  return `<button class="wline" type="button" data-wcode="${esc(b.code)}"><span>💧 <b>Water</b> at ${esc(b.name)}${warn}</span>
+    <span class="wq"><i style="background:${l.color}"></i>${l.label}<span style="color:var(--muted);font-weight:500"> · 365-day ${esc(y.label)}</span></span></button>`;
+}
+
+function beachCard(b){
+  const l = wqLatest(b), y = wqYear(b), al = alertsFor(b.code);
+  return `<button class="spot" type="button" data-beach="${esc(b.code)}">
+    <div class="spot-h"><div><div class="spot-n">${esc(b.name)}</div><div class="spot-p">${coastName(b.coastline)}</div></div>
+      <span class="wq"><i style="background:${l.color}"></i>${l.label}</span></div>
+    <div class="spot-g">
+      <div><div class="k">Latest sample</div><div class="v">${b.enterococci ?? "–"}<span class="s"> cfu/100ml</span></div><div class="s">${sampleDay(b.lastSampleDate)}</div></div>
+      <div><div class="k">365-day rating</div><div class="v"><span class="wq"><i style="background:${y.color}"></i>${esc(y.label)}</span></div></div>
+      <div><div class="k">Alerts</div><div class="v" style="color:${al.length ? "var(--r2)" : "inherit"}">${al.length ? "⚠ " + al.length : "None"}</div></div>
+    </div>
+    ${al.length ? `<div class="spot-best" style="color:var(--r1)">⚠ ${esc(al[0].title)}</div>` : ""}
+  </button>`;
+}
+
+function drawWater(){
+  if(!wq){ $("#beachCards").innerHTML = `<div class="empty">${wqLoading ? "Loading water quality…" : "Water-quality data isn't available yet. It appears after the next update."}</div>`; $("#wqNote").textContent = ""; return; }
+  const favs = beachFavs().map(beachBy).filter(Boolean);
+  const alerts = wq.alerts || [];
+  $("#wqAlerts").innerHTML = alerts.length ? `<details class="alert-card"><summary><b style="display:inline">⚠ ${alerts.length} active coastal alert${alerts.length === 1 ? "" : "s"}</b></summary>
+    ${alerts.map(a => {
+      const names = (a.affectedBeachCodes || []).map(beachBy).filter(Boolean);
+      return `<div style="margin-top:10px"><b>${esc(a.title)}</b>${esc(a.message || "")}
+        ${names.length ? `<div>${names.map(n => `<button type="button" data-beach="${esc(n.code)}">${esc(n.name)} ›</button>`).join(" ")}</div>` : ""}
+        <div class="w">Since ${a.activeFrom ? new Date(a.activeFrom).toLocaleDateString("en-ZA", {day: "numeric", month: "short"}) : "–"}${a.resolutionNote ? " · " + esc(a.resolutionNote) : ""}</div></div>`;
+    }).join("")}</details>` : "";
+  $("#beachCards").innerHTML = favs.length ? favs.map(beachCard).join("")
+    : `<div class="empty">No saved beaches yet. Tap “Add beach”, or switch to Map and tap any pin.</div>`;
+  const upd = wq.fetched_at ? new Date(wq.fetched_at).toLocaleString("en-ZA", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: tz}) : "–";
+  $("#wqNote").innerHTML = `Water quality for ${wq.beaches.length} Cape Town beaches and tidal pools, from the City of Cape Town's <a href="${WQ_SITE}" target="_blank" rel="noopener">Beach Alerts</a> (checked ${upd}). Results are enterococci bacteria counts. A single sample under 240 cfu/100 ml is within the national recreational guideline. Most beaches are tested weekly, and results are published at least 72 hours after sampling, so they describe the water a few days ago.`;
+}
+
+function drawBeachPins(){
+  const yearMode = wqBasis === "year";
+  document.querySelectorAll("#wqBasis button").forEach(b => b.setAttribute("aria-pressed", b.dataset.b === wqBasis));
+  $("#surfLegend").innerHTML = yearMode
+    ? Object.entries(WQ_YEAR).map(([k, c]) => `<span><i style="background:var(${c})"></i>${k}</span>`).join("")
+    : Object.values(WQ_LATEST).map(v => `<span><i style="background:var(${v[1]})"></i>${v[0]}</span>`).join("") + `<span>⚠ alert</span>`;
+  if(!wq) return;
+  const favs = new Set(beachFavs()), pts = [], favPts = [];
+  for(const b of wq.beaches){
+    const fav = favs.has(b.code), v = yearMode ? wqYear(b) : wqLatest(b), warn = alertsFor(b.code).length;
+    const node = document.createElement("div");
+    node.className = "pinwrap gpin";
+    const bad = yearMode ? /Sufficient|Poor/.test(b.longTermFlag || "") : v.k === "amber" || v.k === "red";
+    node.dataset.size = fav ? 30 : 15;
+    node.innerHTML = `<div class="pin ${fav ? "" : "lib dot"}" style="background:${v.color};position:relative">${fav || bad ? v.glyph : ""}${warn ? '<span class="warn">⚠</span>' : ""}</div><div class="pin-l ${fav ? "" : "lib"}">${esc(b.name)}</div>`;
+    mapApi.add(b.latitude, b.longitude, node, b.name, fav ? 1000 : bad || warn ? 800 : 0, () => openBeach(b.code));
+    pts.push([b.latitude, b.longitude]); if(fav) favPts.push([b.latitude, b.longitude]);
+  }
+  if(fittedFor !== "water" && pts.length){ mapApi.fit(favPts.length >= 2 ? favPts : pts); fittedFor = "water"; }
+}
+
+function openBeach(code){
+  if(!beachBy(code)) return;
+  beachOpen = code;
+  const stacked = !$("#surfSheet").hidden;
+  $("#beachSheet").hidden = false; document.body.style.overflow = "hidden";
+  if(!stacked && (!history.state || !history.state.sheet)) history.pushState({sheet: true}, "");
+  drawBeach();
+}
+function closeBeach(fromPop){
+  if($("#beachSheet").hidden) return;
+  $("#beachSheet").hidden = true; beachOpen = null;
+  if($("#surfSheet").hidden){
+    document.body.style.overflow = "";
+    if(!fromPop && history.state && history.state.sheet) history.back();
+  }
+}
+function drawBeach(){
+  const b = beachBy(beachOpen); if(!b) return closeBeach();
+  const l = wqLatest(b), y = wqYear(b), al = alertsFor(b.code), fav = beachFavs().includes(b.code);
+  $("#bTitle").textContent = b.name;
+  $("#bPlace").textContent = [coastName(b.coastline), b.code].filter(Boolean).join(" · ");
+  const latestTxt = l.k === "green" ? `The latest sample was within the national recreational guideline (under 240 cfu/100 ml).`
+    : l.k === "amber" ? `The latest sample was above the guideline. One high result can be a short-lived spike; the City retests and flags red if it happens twice in a row.`
+    : l.k === "red" ? `Two consecutive samples were above the guideline. Avoid swimming here until results improve.`
+    : `No recent result is available.`;
+  $("#bBody").innerHTML = `
+    ${al.map(a => `<div class="alert-card" style="margin-top:12px"><b>⚠ ${esc(a.title)}</b>${esc(a.message || "")}
+      <div class="w">Since ${a.activeFrom ? new Date(a.activeFrom).toLocaleDateString("en-ZA", {day: "numeric", month: "long"}) : "–"}${a.resolutionNote ? " · " + esc(a.resolutionNote) : ""}${a.alertFootnote ? " " + esc(a.alertFootnote) : ""}</div></div>`).join("")}
+    <div class="wq-big"><div class="dot" style="background:${l.color}">${l.glyph}</div><div>
+      <div class="h">Latest: ${l.label}</div>
+      <div class="t">${b.enterococci ?? "–"} enterococci cfu/100 ml · sampled ${sampleDay(b.lastSampleDate)}<br>${latestTxt}</div></div></div>
+    <div class="wq-big"><div class="dot" style="background:${y.color}">${y.glyph}</div><div>
+      <div class="h">365-day rating: ${esc(y.label)}</div>
+      <div class="t">${WQ_YEAR_TXT[b.longTermFlag] || "Not enough samples for a long-term rating."} It's based on all of the past year's samples.</div></div></div>`;
+  $("#bFav").textContent = fav ? "Remove from saved beaches" : "★ Save beach";
+  $("#bFav").className = fav ? "secondary" : "primary";
+  $("#bLink").href = WQ_SITE + (b.detailUrl || "/");
+  $("#bLink").textContent = "Test history, lifeguards & weather on Beach Alerts ›";
+  $("#bNote").textContent = "Source: City of Cape Town Beach Alerts. Results are published at least 72 hours after sampling.";
+}
+
+$("#beachSheet").addEventListener("click", e => { if(e.target.closest("[data-bclose]")) closeBeach(); });
+$("#bFav").onclick = () => {
+  const a = beachFavs(), i = a.indexOf(beachOpen);
+  if(i >= 0) a.splice(i, 1); else a.push(beachOpen);
+  saveBeachFavs(a); drawBeach();
+  if(surfMode === "water"){ if(surfView === "list") drawWater(); else drawPins(); }
+};
+$("#waterList").addEventListener("click", e => { const b = e.target.closest("[data-beach]"); if(b) openBeach(b.dataset.beach); });
+$("#sWater").addEventListener("click", e => { const b = e.target.closest("[data-wcode]"); if(b) openBeach(b.dataset.wcode); });
+$("#wqBasis").onclick = e => { const b = e.target.closest("button[data-b]"); if(!b) return; wqBasis = b.dataset.b; store("wqBasis", wqBasis); drawPins(); };
+$("#addBeachBtn").onclick = () => { const p = $("#beachAdd"); p.hidden = !p.hidden; if(!p.hidden){ $("#beachQ").value = ""; $("#beachRes").innerHTML = ""; $("#beachQ").focus(); } };
+$("#beachQ").addEventListener("input", () => {
+  const q = $("#beachQ").value.trim().toLowerCase(), favs = beachFavs();
+  if(!wq || q.length < 2){ $("#beachRes").innerHTML = ""; return; }
+  const hits = wq.beaches.filter(b => b.name.toLowerCase().includes(q)).slice(0, 10);
+  $("#beachRes").innerHTML = hits.length ? hits.map(b => { const l = wqLatest(b);
+    return `<button type="button" data-addbeach="${esc(b.code)}"><span class="wq"><i style="background:${l.color}"></i>${esc(b.name)}</span>${favs.includes(b.code) ? " <small>(saved)</small>" : ""}<br><small>${coastName(b.coastline)} · 365-day ${esc(wqYear(b).label)}</small></button>`; }).join("")
+    : `<div class="spot-p" style="padding:8px 2px">No monitored beach matches. The City monitors 72 beaches and tidal pools.</div>`;
+});
+$("#beachRes").onclick = e => {
+  const b = e.target.closest("[data-addbeach]"); if(!b) return;
+  const a = beachFavs(); if(!a.includes(b.dataset.addbeach)) a.push(b.dataset.addbeach);
+  saveBeachFavs(a); $("#beachAdd").hidden = true; drawWater();
+};
+window.addEventListener("popstate", () => closeBeach(true));
+document.addEventListener("keydown", e => { if(e.key === "Escape") closeBeach(); });
 
 /* ---------- Cook: NYT Cooking search + ideas from Claude ---------- */
 const nytSearch = q => "https://cooking.nytimes.com/search?q=" + encodeURIComponent(q.trim());
