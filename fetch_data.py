@@ -433,6 +433,196 @@ def update_beaches(cfg: dict) -> dict | None:
         return previous if isinstance(previous, dict) else None
 
 
+# ---------------------------------------------------------------- surf (same model as the app's Surf tab)
+
+SURF_MIN_AGE = timedelta(minutes=55)
+SIZE_PREFS = {"small": (0.5, 1.2), "medium": (0.9, 2.0), "big": (1.5, 3.5)}
+RATING_BANDS = [(1.5, "Poor"), (3, "Poor"), (4.5, "Poor-fair"), (6, "Fair"), (7.5, "Good"), (9, "Very good"), (99, "Epic")]
+DIRS16 = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+MARINE_FULL = ("wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_direction,swell_wave_period,"
+               "secondary_swell_wave_height,secondary_swell_wave_direction,secondary_swell_wave_period,"
+               "wind_wave_height,sea_level_height_msl,sea_surface_temperature")
+MARINE_CORE = "wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_direction,swell_wave_period,wind_wave_height"
+FT = 3.281
+
+
+def _ang(a, b):
+    return abs(((a - b) % 360 + 540) % 360 - 180)
+
+
+def _clamp(v, lo, hi):
+    return max(lo, min(hi, v))
+
+
+def _lerp(x, x0, x1, y0, y1):
+    return y0 if x <= x0 else y1 if x >= x1 else y0 + (x - x0) / (x1 - x0) * (y1 - y0)
+
+
+def _dir(d):
+    return "-" if d is None else DIRS16[round((d % 360) / 22.5) % 16]
+
+
+def _band(r):
+    return next(lbl for lim, lbl in RATING_BANDS if r < lim)
+
+
+def _surf_range(h):
+    if h < 0.25:
+        return "flat"
+    lo = max(1, round(h * 0.8 * FT)); hi = max(lo, round(h * 1.15 * FT))
+    return f"{lo} ft" if lo == hi else f"{lo}-{hi} ft"
+
+
+def surf_forecast(spot: dict, m: dict, w: dict, size: str) -> dict:
+    """Python port of buildForecast() in site/index.html: hourly surf height, wind quality, tide and a 0-10 rating."""
+    H, W = m["hourly"], w["hourly"]
+    widx = {t: i for i, t in enumerate(W["time"])}
+    pref = SIZE_PREFS.get(size, SIZE_PREFS["medium"])
+    g = lambda k, i: (H.get(k) or [None] * (i + 1))[i] if H.get(k) and i < len(H[k]) else None
+    hours = []
+    for i, t in enumerate(H["time"]):
+        trains = [(g(a, i), g(b, i), g(c, i)) for a, b, c in (
+            ("swell_wave_height", "swell_wave_period", "swell_wave_direction"),
+            ("secondary_swell_wave_height", "secondary_swell_wave_period", "secondary_swell_wave_direction"))]
+        trains = [x for x in trains if x[0] is not None and x[0] > 0.05 and x[1] is not None and x[2] is not None]
+        if not trains and g("wave_height", i) is not None:
+            trains = [(g("wave_height", i), g("wave_period", i) or 8, g("wave_direction", i) if g("wave_direction", i) is not None else spot["facing"])]
+        e2, best, best_face = 0.0, None, -1
+        for h, T, d in trains:
+            exposure = _clamp(1 - (_ang(d, spot.get("swell_from", spot["facing"])) - 40) / 70, 0, 1) ** 1.3
+            face = h * _clamp(0.55 + T * 0.055, 0.8, 1.55) * exposure
+            e2 += face * face
+            if face > best_face:
+                best_face, best = face, (h, T, d)
+        surf_h = math.sqrt(e2 + ((g("wind_wave_height", i) or 0) * 0.4) ** 2)
+        wi = widx.get(t)
+        ws = W["wind_speed_10m"][wi] if wi is not None else None
+        wd = W["wind_direction_10m"][wi] if wi is not None else None
+        kind, wscore = "unknown", 0.6
+        if ws is not None and wd is not None:
+            off = _ang(wd, (spot["facing"] + 180) % 360)
+            if off <= 45:
+                kind, wscore = "offshore", 1 if ws <= 25 else _lerp(ws, 25, 45, 1, 0.55)
+            elif off <= 80:
+                kind, wscore = "cross-offshore", _lerp(ws, 12, 30, 0.95, 0.3)
+            elif off <= 110:
+                kind, wscore = "cross-shore", _lerp(ws, 8, 22, 0.85, 0.15)
+            else:
+                kind, wscore = "onshore", _lerp(ws, 6, 18, 0.75, 0.08)
+            if ws < 6:
+                kind = "light"
+        size_s = (_lerp(surf_h, pref[0] * 0.35, pref[0], 0, 1) if surf_h < pref[0]
+                  else _lerp(surf_h, pref[1], pref[1] * 1.9, 1, 0.1) if surf_h > pref[1] else 1)
+        period_q = _clamp((best[1] - 5) / 8, 0.15, 1) if best else 0.3
+        hours.append({"t": t, "surf_h": surf_h, "best": best, "ws": ws, "wd": wd, "kind": kind, "wscore": wscore,
+                      "size_s": size_s, "period_q": period_q, "sea": g("sea_level_height_msl", i), "sst": g("sea_surface_temperature", i)})
+    by_day = {}
+    for i, h in enumerate(hours):
+        by_day.setdefault(h["t"][:10], []).append(i)
+    for idx in by_day.values():
+        lv = [hours[i]["sea"] for i in idx if hours[i]["sea"] is not None]
+        lo, hi = (min(lv), max(lv)) if lv else (0, 0)
+        for i in idx:
+            h = hours[i]
+            h["tide_pos"] = (h["sea"] - lo) / (hi - lo) if h["sea"] is not None and hi - lo > 0.05 else None
+            nx = hours[i + 1] if i + 1 < len(hours) else None
+            h["tide_dir"] = (None if h["sea"] is None or not nx or nx["sea"] is None else
+                             "rising" if nx["sea"] > h["sea"] + 0.005 else "falling" if nx["sea"] < h["sea"] - 0.005 else "turning")
+    target = {"low": 0.15, "mid": 0.5, "high": 0.85}.get(spot.get("tide"))
+    for h in hours:
+        tide_f = 1 if target is None or h["tide_pos"] is None else 1 - 0.5 * min(1, abs(h["tide_pos"] - target) / 0.6)
+        r = 10 * h["size_s"] ** 0.9 * (0.4 + 0.6 * h["wscore"]) * (0.65 + 0.35 * h["period_q"]) * tide_f
+        if h["surf_h"] < 0.25:
+            r = min(r, 1)
+        h["rating"] = round(r, 1)
+        h["label"] = ("Flat" if h["surf_h"] < 0.25 else "Too big" if h["rating"] < 3 and h["size_s"] < 0.6 and h["surf_h"] > pref[1]
+                      else "Too small" if h["rating"] < 3 and h["size_s"] < 0.6 else _band(h["rating"]))
+    days = [{"date": d, "sunrise": w["daily"]["sunrise"][i], "sunset": w["daily"]["sunset"][i]} for i, d in enumerate(w.get("daily", {}).get("time", []))]
+    for h in hours:
+        d = next((x for x in days if x["date"] == h["t"][:10]), None)
+        h["daylight"] = not d or (h["t"] >= d["sunrise"][:13] and h["t"] <= d["sunset"])
+
+    def tide_txt(h):
+        if h["tide_pos"] is None:
+            return None
+        lvl = "low" if h["tide_pos"] < 0.33 else "high" if h["tide_pos"] > 0.67 else "mid"
+        return lvl + (", " + h["tide_dir"] if h["tide_dir"] else "")
+
+    def best_window(date, start_i=0):
+        idx = [i for i, h in enumerate(hours) if h["t"].startswith(date) and h["daylight"] and i >= start_i]
+        if not idx:
+            return None
+        top = max(idx, key=lambda i: hours[i]["rating"])
+        s_, e_ = top, top
+        ok = lambda i: i in idx and hours[i]["rating"] >= hours[top]["rating"] - 1
+        while ok(s_ - 1): s_ -= 1
+        while ok(e_ + 1): e_ += 1
+        end = hours[min(e_ + 1, len(hours) - 1)]["t"]
+        d = next((x for x in days if x["date"] == date), None)
+        if d and (end > d["sunset"] or not end.startswith(date)):
+            end = d["sunset"]
+        return {"from": hours[s_]["t"][11:16], "to": end[11:16], "rating": hours[top]["rating"], "label": hours[top]["label"]}
+
+    def slim(h):
+        b = h["best"]
+        return {"time": h["t"], "rating": h["rating"], "label": h["label"], "surf": _surf_range(h["surf_h"]),
+                "swell": f"{max(1, round(b[0] * FT))} ft @ {round(b[1])}s {_dir(b[2])}" if b else None,
+                "wind": None if h["ws"] is None else f"{round(h['ws'] / 3.6)} m/s {_dir(h['wd'])} ({h['kind']})",
+                "tide": tide_txt(h)}
+
+    offset = m.get("utc_offset_seconds") or w.get("utc_offset_seconds") or 0
+    local_now = (datetime.now(timezone.utc) + timedelta(seconds=offset)).strftime("%Y-%m-%dT%H")
+    now_i = next((i for i, h in enumerate(hours) if h["t"][:13] == local_now), 0)
+    out_days = []
+    for d in days[:4]:
+        start = now_i if d["date"] == hours[now_i]["t"][:10] else 0
+        out_days.append({"date": d["date"], "best": best_window(d["date"], start),
+                         "hours": [slim(h) for i, h in enumerate(hours)
+                                   if h["t"].startswith(d["date"]) and h["daylight"] and i >= start and int(h["t"][11:13]) % 2 == 0]})
+    sst = hours[now_i]["sst"]
+    return {"id": spot["id"], "name": spot["name"], "place": spot.get("place", ""), "lat": spot["lat"], "lon": spot["lon"],
+            "facing": _dir(spot["facing"]), "now": slim(hours[now_i]), "water_temp_c": None if sst is None else round(sst),
+            "days": out_days}
+
+
+def update_surf(cfg: dict) -> dict | None:
+    """Surf ratings for every configured spot (favourites + library), for Dominic and other readers.
+    The phone app still computes its own live forecast; this mirrors it hourly."""
+    scfg = cfg.get("surf", {})
+    spots = [dict(x, favourite=True) for x in scfg.get("spots", [])] + [dict(x, favourite=False) for x in scfg.get("library", [])]
+    if not spots:
+        return None
+    previous = load_previous("surf.json")
+    now = datetime.now(timezone.utc)
+    if isinstance(previous, dict) and previous.get("fetched_at"):
+        try:
+            if now - datetime.fromisoformat(previous["fetched_at"]) < SURF_MIN_AGE:
+                return previous
+        except ValueError:
+            pass
+    lat = ",".join(str(x["lat"]) for x in spots); lon = ",".join(str(x["lon"]) for x in spots)
+    base = f"latitude={lat}&longitude={lon}&timezone=auto&forecast_days=4"
+    as_list = lambda j: j if isinstance(j, list) else [j]
+    try:
+        try:
+            marine = as_list(_get_json(f"https://marine-api.open-meteo.com/v1/marine?{base}&cell_selection=sea&hourly={MARINE_FULL}"))
+        except Exception:
+            marine = as_list(_get_json(f"https://marine-api.open-meteo.com/v1/marine?{base}&hourly={MARINE_CORE}"))
+        weather = as_list(_get_json(f"https://api.open-meteo.com/v1/forecast?{base}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m&daily=sunrise,sunset&wind_speed_unit=kmh"))
+        size = scfg.get("size", "medium")
+        out = []
+        for sp, mm, ww in zip(spots, marine, weather):
+            try:
+                f = surf_forecast(sp, mm, ww, size); f["favourite"] = sp["favourite"]; out.append(f)
+            except Exception as e:
+                print(f"[surf] {sp['name']}: {e}", file=sys.stderr)
+        print(f"[surf] {len(out)} spots forecast")
+        return {"fetched_at": now.isoformat(), "size_preference": size, "source": "Open-Meteo.com (CC BY 4.0)", "spots": out}
+    except Exception as e:
+        print(f"[surf] forecast failed, keeping previous ({e})", file=sys.stderr)
+        return previous if isinstance(previous, dict) else None
+
+
 def main() -> int:
     cfg = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
     markets, history = fetch_markets(cfg["markets"])
@@ -470,6 +660,9 @@ def main() -> int:
     beaches = update_beaches(cfg)
     if beaches:
         write(ROOT / "site" / "beaches.json", beaches)
+    surf = update_surf(cfg)
+    if surf:
+        write(ROOT / "site" / "surf.json", surf)
     print(f"Archive: {len(archive)} headlines over the last {ARCHIVE_DAYS} days"
           f" | briefing: {briefing['date'] if briefing else 'none'}")
 

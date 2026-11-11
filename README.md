@@ -74,6 +74,17 @@ Switch the Ask tab to **Cook**.
 - **History:** the 7-day history (`archive.json`) builds up automatically from the day you install this version. Searches cover a little less than a week until then.
 - **Limits:** the analysis works from headlines and teasers, not full articles. Treat it as a well-informed briefing, and tap through to the sources for detail.
 
+## Data files (for Dominic and other programs)
+
+Each update publishes the app's data as JSON files on the app's website, at `https://<your-username>.github.io/market-brief/<file>`. Any program can read them without a key:
+- `data.json`: prices, the latest news and sport, today's briefing, and the default saved beaches
+- `archive.json`: every headline from the last 7 days
+- `history.json`: about a year of daily closes
+- `beaches.json`: City of Cape Town water quality and coastal alerts, refreshed at most hourly
+- `surf.json`: surf ratings and best windows for every spot over about 4 days, using the same model as the Surf tab and the `surf → size` preference in `config.json`, refreshed at most hourly
+
+Dominic reads these through his `markets.py` module.
+
 ## Good to know
 
 - **Delays.** Yahoo's index data is typically 15–20 minutes delayed. GitHub sometimes starts scheduled runs a few minutes late at busy times.
